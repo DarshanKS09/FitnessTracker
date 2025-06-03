@@ -11,3 +11,8 @@ For starting it first time u need to have react plugin installed
        npm install @vitejs/plugin-react --save-dev
        
 Then run the frontend (npm run dev)
+
+
+
+For connecting to mongo db (either atlas or shell)
+Add the connection string to the MongoUrI in the .env file (backend folder)
