@@ -1,6 +1,9 @@
 import React, { useState, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
+import { login as loginApi } from '../utils/api';
+import axios from 'axios';
+import { toast } from 'react-toastify';
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
@@ -8,15 +11,18 @@ const LoginPage = () => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      await login(email, password);
+      const res = await loginApi({ email, password });
+      const token = res.data?.accessToken || res.data?.token || res.data?.accessToken;
+      // fetch user me
+      const me = await axios.get('/api/user/me', { headers: { Authorization: `Bearer ${token}` } });
+      login(token, me.data);
       navigate('/dashboard');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
+      toast.error(err.response?.data?.message || 'Login failed');
     }
   };
 
@@ -24,7 +30,6 @@ const LoginPage = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <div className="bg-white shadow-md rounded-md p-8 w-full max-w-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
-        {error && <div className="text-red-500 text-center mb-4">{error}</div>}
         <form onSubmit={handleLogin} className="space-y-4">
           <input
             type="email"

@@ -3,74 +3,129 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const RegisterPage = () => {
-  const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: ''
-  });
-  const [successMessage, setSuccessMessage] = useState(''); 
+  const [step, setStep] = useState('email'); // 'email' | 'verify' | 'password' | 'done'
+  const [email, setEmail] = useState('');
+  const [code, setCode] = useState('');
+  const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
 
   const navigate = useNavigate();
 
-  const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const sendOtp = async (e) => {
+    e && e.preventDefault();
+    setError('');
+    setMessage('');
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth/send-otp', { email });
+      setMessage(res.data.message || 'OTP sent');
+      setStep('verify');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to send OTP');
+    }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const verifyOtp = async (e) => {
+    e && e.preventDefault();
+    setError('');
+    setMessage('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', formData);
-      setSuccessMessage(res.data.message); 
-      
-      setFormData({ name: '', email: '', password: '' });
-     
+      const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email, code });
+      setMessage(res.data.message || 'OTP verified');
+      setStep('password');
     } catch (err) {
-      console.error(err);
-      setSuccessMessage(err.response?.data?.message || 'Registration failed');
+      setError(err.response?.data?.message || 'Failed to verify OTP');
+    }
+  };
+
+  const setPasswordAndRegister = async (e) => {
+    e && e.preventDefault();
+    setError('');
+    setMessage('');
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+    if (password !== confirmPassword) {
+      setError('Passwords do not match');
+      return;
+    }
+
+    try {
+      const res = await axios.post('http://localhost:5000/api/auth/register', { email, password });
+      setMessage(res.data.message || 'Registered successfully');
+      setStep('done');
+      setTimeout(() => navigate('/'), 1400);
+    } catch (err) {
+      setError(err.response?.data?.message || 'Registration failed');
     }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded shadow-md w-96">
+      <div className="bg-white p-8 rounded shadow-md w-96">
         <h2 className="text-2xl font-bold mb-4">Register</h2>
-        <input
-          type="text"
-          name="name"
-          placeholder="Name"
-          value={formData.name}
-          onChange={handleChange}
-          className="w-full mb-4 p-2 border border-gray-300 rounded"
-          required
-        />
-        <input
-          type="email"
-          name="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={handleChange}
-          className="w-full mb-4 p-2 border border-gray-300 rounded"
-          required
-        />
-        <input
-          type="password"
-          name="password"
-          placeholder="Password"
-          value={formData.password}
-          onChange={handleChange}
-          className="w-full mb-4 p-2 border border-gray-300 rounded"
-          required
-        />
-        <button
-          type="submit"
-          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-        >
-          Register
-        </button>
 
-        {successMessage && (
-          <h1 className="mt-4 text-green-600 font-semibold">{successMessage}</h1>
+        {step === 'email' && (
+          <form onSubmit={sendOtp} className="space-y-4">
+            <input
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full mb-2 p-2 border border-gray-300 rounded"
+            />
+            <button className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Send OTP</button>
+          </form>
         )}
+
+        {step === 'verify' && (
+          <form onSubmit={verifyOtp} className="space-y-4">
+            <div className="text-sm mb-2 text-gray-600">OTP sent to <strong>{email}</strong></div>
+            <input
+              type="text"
+              placeholder="Enter OTP"
+              value={code}
+              onChange={(e) => setCode(e.target.value)}
+              required
+              className="w-full mb-2 p-2 border border-gray-300 rounded"
+            />
+            <button className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Verify OTP</button>
+            <button type="button" onClick={sendOtp} className="mt-2 w-full bg-gray-200 text-black px-4 py-2 rounded">Resend OTP</button>
+          </form>
+        )}
+
+        {step === 'password' && (
+          <form onSubmit={setPasswordAndRegister} className="space-y-4">
+            <input
+              type="password"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full mb-2 p-2 border border-gray-300 rounded"
+            />
+            <input
+              type="password"
+              placeholder="Confirm Password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              required
+              className="w-full mb-2 p-2 border border-gray-300 rounded"
+            />
+            <button className="w-full bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700">Register</button>
+          </form>
+        )}
+
+        {step === 'done' && (
+          <div className="text-center text-green-600 font-semibold">{message || 'Registered successfully. Redirecting to login...'}</div>
+        )}
+
+        {message && step !== 'done' && <div className="mt-4 text-green-600 text-center">{message}</div>}
+        {error && <div className="mt-4 text-red-600 text-center">{error}</div>}
 
         <button
           type="button"
@@ -79,7 +134,7 @@ const RegisterPage = () => {
         >
           Go to Login
         </button>
-      </form>
+      </div>
     </div>
   );
 };

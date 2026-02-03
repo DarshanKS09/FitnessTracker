@@ -1,0 +1,17 @@
+{
+  "veg": [
+    { "name": "Paneer Butter Masala", "calories": 350 },
+    { "name": "Veg Pulao", "calories": 300 },
+    { "name": "Dal Tadka", "calories": 250 }
+  ],
+  "chicken": [
+    { "name": "Grilled Chicken", "calories": 400 },
+    { "name": "Chicken Biryani", "calories": 500 },
+    { "name": "Chicken Curry", "calories": 450 }
+  ],
+  "eggs": [
+    { "name": "Boiled Eggs", "calories": 150 },
+    { "name": "Omelette", "calories": 200 },
+    { "name": "Egg Curry", "calories": 350 }
+  ]
+}

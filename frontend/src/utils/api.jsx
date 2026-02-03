@@ -1,49 +1,36 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Set token in axios headers globally
 export function setAuthToken(token) {
-  if (token) {
-    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  } else {
-    delete axios.defaults.headers.common['Authorization'];
-  }
+  if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  else delete axios.defaults.headers.common['Authorization'];
 }
 
-// Auth APIs
-export async function registerApi({ username, password }) {
-  const res = await axios.post(`${API_URL}/auth/register`, { username, password });
-  return res.data;
-}
+// Auth
+export const sendOtp = (email) => axios.post(`${API_URL}/auth/send-otp`, { email });
+export const verifyOtp = (data) => axios.post(`${API_URL}/auth/verify-otp`, data);
+export const register = (data) => axios.post(`${API_URL}/auth/register`, data);
+export const login = (data) => axios.post(`${API_URL}/auth/login`, data);
+export const refresh = () => axios.post(`${API_URL}/auth/refresh`);
+export const logout = () => axios.post(`${API_URL}/auth/logout`);
 
-export async function loginApi({ username, password }) {
-  const res = await axios.post(`${API_URL}/auth/login`, { username, password });
-  return res.data;
-}
+// Food
+export const addFood = (data) => axios.post(`${API_URL}/food/add`, data);
+export const getMyFood = (params) => axios.get(`${API_URL}/food/my`, { params });
+export const updateFood = (id, data) => axios.put(`${API_URL}/food/update/${id}`, data);
+export const deleteFood = (id) => axios.delete(`${API_URL}/food/delete/${id}`);
+export const dailyTotals = (params) => axios.get(`${API_URL}/food/daily-totals`, { params });
+export const weeklyFood = () => axios.get(`${API_URL}/food/weekly`);
 
-// Food Logs APIs - note these paths and token use
+// Diet
+export const generateDiet = (data) => axios.post(`${API_URL}/diet/generate`, data);
+export const getDiet = () => axios.get(`${API_URL}/diet/my`);
 
-export async function fetchFoodLogs() {
-  // GET /foodlogs/my-food (requires auth)
-  const res = await axios.get(`${API_URL}/foodlogs/my-food`);
-  return res.data;
-}
+// Workout
+export const logWorkout = (data) => axios.post(`${API_URL}/workout/log`, data);
+export const getWorkouts = () => axios.get(`${API_URL}/workout/my`);
 
-export async function createFoodLog(data) {
-  // POST /foodlogs/add-food
-  const res = await axios.post(`${API_URL}/foodlogs/add-food`, data);
-  return res.data;
-}
+// Dashboard
+export const getDashboard = () => axios.get(`${API_URL}/dashboard`);
 
-export async function updateFoodLog(id, data) {
-  // PUT /foodlogs/update-food/:id
-  const res = await axios.put(`${API_URL}/foodlogs/update-food/${id}`, data);
-  return res.data;
-}
-
-export async function deleteFoodLog(id) {
-  // DELETE /foodlogs/delete-food/:id
-  const res = await axios.delete(`${API_URL}/foodlogs/delete-food/${id}`);
-  return res.data;
-}

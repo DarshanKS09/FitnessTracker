@@ -1,42 +1,66 @@
-import React, { createContext, useState } from 'react';
+import React, { createContext, useState, useEffect } from 'react';
 import axios from 'axios';
+import { setAuthToken } from '../utils/api';
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem('user')) || null);
-  const [token, setToken] = useState(() => localStorage.getItem('token') || null);
+  const [accessToken, setAccessToken] = useState(() => localStorage.getItem('accessToken') || null);
 
-  const login = async (email, password) => {
-    try {
-      const res = await axios.post('http://localhost:5000/api/auth/login', { email, password });
+  useEffect(() => {
+    if (accessToken) setAuthToken(accessToken);
+    else setAuthToken(null);
 
-      const tokenData = res.data.token;
+    // Setup interceptor for refresh
+    const interceptor = axios.interceptors.response.use(
+      (res) => res,
+      async (err) => {
+        const original = err.config;
+        if (err.response?.status === 401 && !original._retry) {
+          original._retry = true;
+          try {
+            const r = await axios.post('/api/auth/refresh');
+            const newToken = r.data.accessToken || r.data.access;
+            if (newToken) {
+              setAccessToken(newToken);
+              localStorage.setItem('accessToken', newToken);
+              setAuthToken(newToken);
+              original.headers['Authorization'] = `Bearer ${newToken}`;
+              return axios(original);
+            }
+          } catch (e) {
+            // ignore
+          }
+        }
+        return Promise.reject(err);
+      }
+    );
 
-      
-      setToken(tokenData);
-      localStorage.setItem('token', tokenData);
+    return () => axios.interceptors.response.eject(interceptor);
+  }, [accessToken]);
 
-      
-      const payload = JSON.parse(atob(tokenData.split('.')[1]));
-      const userData = { email: payload.email, id: payload.id };
-
-      setUser(userData);
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (err) {
-      throw err; 
-    }
+  const login = (token, userData) => {
+    setAccessToken(token);
+    localStorage.setItem('accessToken', token);
+    setAuthToken(token);
+    setUser(userData);
+    localStorage.setItem('user', JSON.stringify(userData));
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await axios.post('/api/auth/logout');
+    } catch (e) {}
     setUser(null);
-    setToken(null);
+    setAccessToken(null);
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
+    localStorage.removeItem('accessToken');
+    setAuthToken(null);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout }}>
+    <AuthContext.Provider value={{ user, accessToken, login, logout, setUser }}>
       {children}
     </AuthContext.Provider>
   );
