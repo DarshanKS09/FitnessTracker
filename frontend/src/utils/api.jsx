@@ -7,6 +7,7 @@ export function setAuthToken(token) {
   else delete axios.defaults.headers.common['Authorization'];
 }
 
+
 // Auth
 export const sendOtp = (email) => axios.post(`${API_URL}/auth/send-otp`, { email });
 export const verifyOtp = (data) => axios.post(`${API_URL}/auth/verify-otp`, data);
@@ -28,9 +29,20 @@ export const generateDiet = (data) => axios.post(`${API_URL}/diet/generate`, dat
 export const getDiet = () => axios.get(`${API_URL}/diet/my`);
 
 // Workout
-export const logWorkout = (data) => axios.post(`${API_URL}/workout/log`, data);
-export const getWorkouts = () => axios.get(`${API_URL}/workout/my`);
+// Workout
+export const addWorkout = (data) =>
+  axios.post(`${API_URL}/workout`, data);
+
+export const getMyWorkouts = () =>
+  axios.get(`${API_URL}/workout`);
+
 
 // Dashboard
 export const getDashboard = () => axios.get(`${API_URL}/dashboard`);
 
+// User
+export const updateProfile = (data) =>
+  axios.put(`${API_URL}/users/me`, data);
+
+export const getProfile = () =>
+  axios.get(`${API_URL}/users/me`);

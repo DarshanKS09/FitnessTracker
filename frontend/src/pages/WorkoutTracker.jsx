@@ -1,33 +1,161 @@
-import React, { useState } from 'react';
-import { logWorkout } from '../utils/api';
-import { toast } from 'react-toastify';
+import React, { useState, useEffect } from 'react';
+import { addWorkout, getMyWorkouts } from '../utils/api';
+import { useNotification } from '../context/NotificationContext';
 
-export default function WorkoutTracker() {
-  const [form, setForm] = useState({ cardioType: 'walking', cardioMinutes: 30, strengthMinutes: 20, weightKg: 70 });
+const workoutTypes = [
+  'Walking',
+  'Running',
+  'Swimming',
+  'Cardio',
+  'Strength Training',
+];
+
+export default function Workout() {
+  const { notify } = useNotification();
+
+  const [type, setType] = useState('Walking');
+  const [distance, setDistance] = useState('');
+  const [minutes, setMinutes] = useState('');
+  const [logs, setLogs] = useState([]); // ALWAYS array
+
+  useEffect(() => {
+    fetchLogs();
+  }, []);
+
+  async function fetchLogs() {
+    try {
+      const res = await getMyWorkouts();
+      const data = res?.data ?? res;
+
+      // Defensive protection
+      if (Array.isArray(data)) {
+        setLogs(data);
+      } else if (Array.isArray(data?.workouts)) {
+        setLogs(data.workouts);
+      } else {
+        setLogs([]);
+      }
+    } catch {
+      setLogs([]);
+    }
+  }
 
   const submit = async (e) => {
     e.preventDefault();
+
+    let payload = {
+      type,
+      distance: null,
+      minutes: null,
+    };
+
+    if (type === 'Walking' || type === 'Running') {
+      if (!distance) return notify('Enter distance (km)', 'error');
+      payload.distance = Number(distance);
+    } else {
+      if (!minutes) return notify('Enter duration (minutes)', 'error');
+      payload.minutes = Number(minutes);
+    }
+
     try {
-      await logWorkout(form);
-      toast.success('Workout logged');
-    } catch (err) { toast.error('Failed to log workout'); }
+      await addWorkout(payload);
+      notify('Workout logged', 'success');
+      setDistance('');
+      setMinutes('');
+      fetchLogs();
+    } catch {
+      notify('Failed to log workout', 'error');
+    }
   };
 
   return (
-    <div className="p-6 max-w-3xl mx-auto">
-      <h2 className="text-2xl mb-4">Workout Tracker</h2>
-      <form onSubmit={submit} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        <select value={form.cardioType} onChange={e=>setForm({...form, cardioType:e.target.value})} className="p-2 border rounded">
-          <option value="walking">Walking</option>
-          <option value="running">Running</option>
-          <option value="cycling">Cycling</option>
-          <option value="swimming">Swimming</option>
-        </select>
-        <input value={form.cardioMinutes} onChange={e=>setForm({...form, cardioMinutes:e.target.value})} className="p-2 border rounded" />
-        <input value={form.strengthMinutes} onChange={e=>setForm({...form, strengthMinutes:e.target.value})} className="p-2 border rounded" />
-        <input value={form.weightKg} onChange={e=>setForm({...form, weightKg:e.target.value})} className="p-2 border rounded" />
-        <button className="bg-green-600 text-white p-2 rounded">Log</button>
-      </form>
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
+      <div className="max-w-4xl mx-auto space-y-6">
+
+        <h2 className="text-3xl font-bold text-emerald-800">
+          Workout Tracker
+        </h2>
+
+        {/* Form */}
+        <form
+          onSubmit={submit}
+          className="bg-white rounded-3xl shadow-lg p-8 space-y-6"
+        >
+          <select
+            value={type}
+            onChange={(e) => {
+              setType(e.target.value);
+              setDistance('');
+              setMinutes('');
+            }}
+            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
+          >
+            {workoutTypes.map((w) => (
+              <option key={w}>{w}</option>
+            ))}
+          </select>
+
+          {(type === 'Walking' || type === 'Running') && (
+            <input
+              type="number"
+              placeholder="Distance (km)"
+              value={distance}
+              onChange={(e) => setDistance(e.target.value)}
+              className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
+            />
+          )}
+
+          {(type !== 'Walking' && type !== 'Running') && (
+            <input
+              type="number"
+              placeholder="Duration (minutes)"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+              className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
+            />
+          )}
+
+          <button
+            type="submit"
+            className="bg-emerald-600 text-white rounded-lg py-3 w-full font-semibold hover:bg-emerald-700 transition"
+          >
+            Log Workout
+          </button>
+        </form>
+
+        {/* Logged Workouts */}
+        <div className="bg-white rounded-3xl shadow-lg p-8 space-y-4">
+          <h3 className="text-lg font-semibold text-emerald-800">
+            Today's Workouts
+          </h3>
+
+          {logs.length === 0 ? (
+            <p className="text-gray-400 text-sm">No workouts logged today.</p>
+          ) : (
+            logs.map((item) => (
+              <div
+                key={item._id}
+                className="border border-emerald-100 rounded-xl p-4 bg-emerald-50 flex justify-between"
+              >
+                <div>
+                  <p className="font-semibold text-emerald-800">
+                    {item.type}
+                  </p>
+                  <p className="text-sm text-gray-600">
+                    {item.distance
+                      ? `${item.distance} km`
+                      : `${item.minutes} minutes`}
+                  </p>
+                </div>
+                <p className="text-emerald-700 font-medium">
+                  {item.caloriesBurned || 0} kcal
+                </p>
+              </div>
+            ))
+          )}
+        </div>
+
+      </div>
     </div>
   );
 }

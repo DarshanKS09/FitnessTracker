@@ -1,64 +1,49 @@
 const WorkoutLog = require('../models/WorkoutLog');
 
-const METS = {
-  walking: 3.5,
-  running: 9.8,
-  cycling: 7.5,
-  swimming: 8,
-  rowing: 7,
-  default: 6,
-};
-
-function caloriesFromMet(met, weightKg, minutes) {
-  return (met * 3.5 * (weightKg || 70) / 200) * minutes;
-}
-
-async function logWorkout(req, res) {
+// Add Workout
+exports.addWorkout = async (req, res) => {
   try {
-    const { cardioType, cardioMinutes, strengthMinutes, weightKg } = req.body;
-    const userId = req.user._id;
-    const met = METS[cardioType] || METS.default;
-    const cardioCalories = caloriesFromMet(met, weightKg, cardioMinutes || 0);
-    const strengthCalories = (strengthMinutes || 0) * 6; // rough estimate
-    const total = Math.round(cardioCalories + strengthCalories);
+    const { type, distance, minutes } = req.body;
 
-    const rec = await WorkoutLog.create({ userId, cardioType, cardioMinutes, strengthMinutes, caloriesBurned: total });
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    // PR tracking: if strengthMinutes > pr, update
-    // Simplified PR logic
-    if (strengthMinutes && strengthMinutes > (req.user.pr || 0)) {
-      req.user.pr = strengthMinutes;
-      await req.user.save();
-    }
+    let caloriesBurned = 0;
 
-    res.json(rec);
+    if (type === 'Walking') caloriesBurned = distance * 60;
+    if (type === 'Running') caloriesBurned = distance * 90;
+    if (type === 'Strength Training') caloriesBurned = minutes * 6;
+    if (type === 'Cardio') caloriesBurned = minutes * 8;
+    if (type === 'Swimming') caloriesBurned = minutes * 7;
+
+    const workout = await WorkoutLog.create({
+      userId: req.user.id,
+      type,
+      distance: distance || null,
+      minutes: minutes || null,
+      caloriesBurned,
+      date: today, // IMPORTANT
+    });
+
+    res.status(201).json(workout);
   } catch (err) {
     res.status(500).json({ message: 'Failed to log workout' });
   }
-}
+};
 
-async function getWorkouts(req, res) {
-  const userId = req.user._id;
-  const logs = await WorkoutLog.find({ userId }).sort({ createdAt: -1 });
-  res.json(logs);
-}
-
-async function weeklySummary(req, res) {
+// Get Today's Workouts
+exports.getMyWorkouts = async (req, res) => {
   try {
-    const userId = req.user._id;
-    const weekStart = new Date();
-    weekStart.setDate(weekStart.getDate() - 6);
-    weekStart.setHours(0,0,0,0);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    const agg = await WorkoutLog.aggregate([
-      { $match: { userId, createdAt: { $gte: weekStart } } },
-      { $group: { _id: null, totalCalories: { $sum: '$caloriesBurned' }, sessions: { $sum: 1 } } }
-    ]);
+    const workouts = await WorkoutLog.find({
+      userId: req.user.id,
+      date: today,
+    }).sort({ createdAt: -1 });
 
-    res.json(agg[0] || { totalCalories: 0, sessions: 0 });
+    res.json(workouts); // MUST be array
   } catch (err) {
-    res.status(500).json({ message: 'Failed to summarize' });
+    res.status(500).json({ message: 'Failed to fetch workouts' });
   }
-}
-
-module.exports = { logWorkout, getWorkouts, weeklySummary };
+};

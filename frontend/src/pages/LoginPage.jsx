@@ -3,7 +3,7 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate, Link } from 'react-router-dom';
 import { login as loginApi } from '../utils/api';
 import axios from 'axios';
-import { toast } from 'react-toastify';
+import { useNotification } from '../context/NotificationContext';
 
 const LoginPage = () => {
   const { login } = useContext(AuthContext);
@@ -12,19 +12,25 @@ const LoginPage = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
-  const handleLogin = async (e) => {
-    e.preventDefault();
-    try {
-      const res = await loginApi({ email, password });
-      const token = res.data?.accessToken || res.data?.token || res.data?.accessToken;
-      // fetch user me
-      const me = await axios.get('/api/user/me', { headers: { Authorization: `Bearer ${token}` } });
-      login(token, me.data);
-      navigate('/dashboard');
-    } catch (err) {
-      toast.error(err.response?.data?.message || 'Login failed');
-    }
-  };
+  const { notify } = useNotification();
+
+ const handleLogin = async (e) => {
+  e.preventDefault();
+  try {
+    const res = await loginApi({ email, password });
+    const token = res.data?.accessToken;
+
+    const me = await axios.get('http://localhost:5000/api/users/me', {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+
+    login(token, me.data);
+    navigate('/dashboard');
+  } catch (err) {
+    notify(err.response?.data?.message || 'Login failed', 'error');
+  }
+};
+
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">

@@ -1,11 +1,13 @@
 const express = require('express');
 const router = express.Router();
-const { auth } = require('../middleware/authMiddleware');
-const controller = require('../controllers/dietController');
-const validate = require('../middleware/validate');
-const { dietSchema } = require('../utils/validators');
+const authMiddleware = require('../middleware/authMiddleware');
 
-router.post('/generate', auth, validate(dietSchema), controller.generatePlan);
-router.get('/my', auth, controller.getPlan);
+router.get('/', authMiddleware, (req, res) => {
+  res.json({ message: 'Diet route working' });
+});
+
+router.post('/', authMiddleware, (req, res) => {
+  res.json({ message: 'Diet POST working' });
+});
 
 module.exports = router;

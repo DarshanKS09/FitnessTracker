@@ -1,17 +1,32 @@
 const express = require('express');
 const router = express.Router();
-const { auth } = require('../middleware/authMiddleware');
+const authMiddleware = require('../middleware/authMiddleware');
 const User = require('../models/User');
 
-router.get('/me', auth, async (req, res) => {
-  const user = await User.findById(req.user._id).select('-password -refreshTokens');
-  res.json(user);
+router.get('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user.id).select('-password -refreshTokens');
+    if (!user) return res.status(404).json({ message: 'User not found' });
+    res.json(user);
+  } catch {
+    res.status(500).json({ message: 'Failed to fetch user' });
+  }
 });
 
-router.put('/me', auth, async (req, res) => {
-  const updates = req.body;
-  const user = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).select('-password -refreshTokens');
-  res.json(user);
+router.put('/me', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findByIdAndUpdate(
+      req.user.id,
+      req.body,
+      { new: true }
+    ).select('-password -refreshTokens');
+
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    res.json(user);
+  } catch {
+    res.status(500).json({ message: 'Failed to update profile' });
+  }
 });
 
 module.exports = router;

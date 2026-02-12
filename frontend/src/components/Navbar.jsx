@@ -1,28 +1,67 @@
 import React, { useContext } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 
 export default function Navbar() {
   const { user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+  const location = useLocation();
+
+  const navLink = (path, label) => (
+    <Link
+      to={path}
+      className={`px-3 py-2 rounded-lg text-sm font-medium transition
+        ${
+          location.pathname === path
+            ? 'bg-emerald-100 text-emerald-700'
+            : 'text-gray-600 hover:bg-emerald-50 hover:text-emerald-600'
+        }`}
+    >
+      {label}
+    </Link>
+  );
 
   return (
-    <nav className="bg-white shadow p-4">
-      <div className="max-w-6xl mx-auto flex justify-between items-center">
-        <h1 className="font-bold text-lg"><Link to="/dashboard">Fitness Tracker</Link></h1>
+    <nav className="bg-white shadow-sm border-b border-emerald-100">
+      <div className="max-w-6xl mx-auto px-6 py-3 flex justify-between items-center">
+
+        {/* Logo */}
+        <Link
+          to="/dashboard"
+          className="text-xl font-bold text-emerald-700 tracking-tight"
+        >
+          FitnessTracker
+        </Link>
+
         <div className="flex items-center gap-4">
+
           {user ? (
             <>
-              <Link to="/food" className="text-sm">Food</Link>
-              <Link to="/diet" className="text-sm">Diet</Link>
-              <Link to="/workout" className="text-sm">Workout</Link>
-              <Link to="/profile" className="text-sm">Profile</Link>
-              <button onClick={() => { logout(); navigate('/'); }} className="text-sm text-red-600">Logout</button>
+              {navLink('/dashboard', 'Dashboard')}
+              {navLink('/food', 'Food')}
+              {navLink('/diet', 'Diet')}
+              {navLink('/workout', 'Workout')}
+              {navLink('/profile', 'Profile')}
+
+              {/* Streak badge */}
+              <div className="hidden md:block bg-emerald-50 px-3 py-1 rounded-full text-xs text-emerald-700">
+                🔥 {user?.streak || 0} Day Streak
+              </div>
+
+              <button
+                onClick={() => {
+                  logout();
+                  navigate('/');
+                }}
+                className="px-3 py-2 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition"
+              >
+                Logout
+              </button>
             </>
           ) : (
             <>
-              <Link to="/" className="text-sm">Login</Link>
-              <Link to="/register" className="text-sm">Register</Link>
+              {navLink('/', 'Login')}
+              {navLink('/register', 'Register')}
             </>
           )}
         </div>

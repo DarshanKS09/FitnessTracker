@@ -3,9 +3,8 @@ import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
 import App from './App';
 import { AuthProvider } from './context/AuthContext';
+import { NotificationProvider } from './context/NotificationContext';
 import Navbar from './components/Navbar';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
 import './index.css';
 import axios from 'axios';
 
@@ -15,9 +14,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <Navbar />
-        <App />
-        <ToastContainer position="top-right" />
+        <NotificationProvider>
+          <Navbar />
+          <App />
+        </NotificationProvider>
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>

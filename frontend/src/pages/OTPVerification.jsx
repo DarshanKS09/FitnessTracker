@@ -1,21 +1,23 @@
 import React, { useState } from 'react';
 import { verifyOtp } from '../utils/api';
 import { useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
+import { useNotification } from '../context/NotificationContext';
 
 export default function OTPVerification() {
   const [email, setEmail] = useState('');
   const [code, setCode] = useState('');
   const navigate = useNavigate();
 
+  const { notify } = useNotification();
+
   const submit = async (e) => {
     e.preventDefault();
     try {
       await verifyOtp({ email, code });
-      toast.success('OTP verified. Set your password on Register page.');
+      notify('OTP verified. Set your password on Register page.', 'success');
       navigate('/register');
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Verification failed');
+      notify(err.response?.data?.message || 'Verification failed', 'error');
     }
   };
 
