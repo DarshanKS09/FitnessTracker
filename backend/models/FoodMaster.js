@@ -42,7 +42,7 @@ const FoodMasterSchema = new mongoose.Schema(
 
     source: {
       type: String,
-      enum: ['manual', 'calorieninjas', 'openfoodfacts'],
+      enum: ['manual', 'usda', 'openai', 'calorieninjas', 'openfoodfacts'],
       default: 'manual',
     },
   },

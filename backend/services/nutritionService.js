@@ -43,6 +43,143 @@ async function fetchFromCalorieNinjas(food) {
   return normalizePer100g(item);
 }
 
+function getNutrientAmount(nutrients = [], keys = []) {
+  for (const n of nutrients) {
+    const name = String(n.nutrientName || '').toLowerCase();
+    const number = String(n.nutrientNumber || '').trim();
+    const unit = String(n.unitName || '').toLowerCase();
+
+    for (const key of keys) {
+      const matchName = key.name ? name.includes(key.name) : false;
+      const matchNumber = key.number ? number === key.number : false;
+      const matchUnit = key.unit ? unit === key.unit : true;
+      if ((matchName || matchNumber) && matchUnit) {
+        const v = toNum(n.value);
+        if (v !== null) return v;
+      }
+    }
+  }
+  return null;
+}
+
+function normalizeUsdaFood(food) {
+  const nutrients = Array.isArray(food.foodNutrients) ? food.foodNutrients : [];
+
+  let calories = getNutrientAmount(nutrients, [
+    { number: '1008', unit: 'kcal' },
+    { name: 'energy', unit: 'kcal' },
+  ]);
+  let protein = getNutrientAmount(nutrients, [
+    { number: '1003' },
+    { name: 'protein' },
+  ]);
+  let carbs = getNutrientAmount(nutrients, [
+    { number: '1005' },
+    { name: 'carbohydrate' },
+  ]);
+  let fats = getNutrientAmount(nutrients, [
+    { number: '1004' },
+    { name: 'total lipid (fat)' },
+    { name: 'fat' },
+  ]);
+
+  if ([calories, protein, carbs, fats].some((v) => v === null)) return null;
+
+  // Branded foods can be per serving. Normalize to per 100g when serving size in g is available.
+  const servingSize = toNum(food.servingSize);
+  const servingUnit = String(food.servingSizeUnit || '').toLowerCase();
+  if (servingSize && servingSize > 0 && (servingUnit === 'g' || servingUnit === 'gram' || servingUnit === 'grams')) {
+    const scale = 100 / servingSize;
+    calories *= scale;
+    protein *= scale;
+    carbs *= scale;
+    fats *= scale;
+  }
+
+  return {
+    calories: Number(calories.toFixed(2)),
+    protein: Number(protein.toFixed(2)),
+    carbs: Number(carbs.toFixed(2)),
+    fats: Number(fats.toFixed(2)),
+    source: 'usda',
+  };
+}
+
+async function fetchFromUSDA(food) {
+  const key = process.env.USDA_FDC_API_KEY;
+  if (!key) return null;
+
+  const res = await axios.get('https://api.nal.usda.gov/fdc/v1/foods/search', {
+    params: {
+      api_key: key,
+      query: food,
+      pageSize: 10,
+    },
+    timeout: 15000,
+  });
+
+  const foods = Array.isArray(res.data?.foods) ? res.data.foods : [];
+  for (const candidate of foods) {
+    const normalized = normalizeUsdaFood(candidate);
+    if (normalized) return normalized;
+  }
+  return null;
+}
+
+function parseOpenAIJson(text) {
+  const match = String(text || '').match(/\{[\s\S]*\}/);
+  if (!match) return null;
+  try {
+    const data = JSON.parse(match[0]);
+    const calories = toNum(data.calories);
+    const protein = toNum(data.protein);
+    const carbs = toNum(data.carbs);
+    const fats = toNum(data.fats);
+
+    if ([calories, protein, carbs, fats].some((v) => v === null)) return null;
+    if (calories < 0 || protein < 0 || carbs < 0 || fats < 0) return null;
+
+    return {
+      calories: Number(calories.toFixed(2)),
+      protein: Number(protein.toFixed(2)),
+      carbs: Number(carbs.toFixed(2)),
+      fats: Number(fats.toFixed(2)),
+      source: 'openai',
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function fetchFromOpenAI(food) {
+  const key = process.env.OPENAI_API_KEY;
+  if (!key) return null;
+
+  const prompt =
+    `Return ONLY JSON for nutrition per 100g edible portion of "${food}". ` +
+    `Use keys exactly: calories, protein, carbs, fats. ` +
+    `All values must be numbers (no units, no text).`;
+
+  const res = await axios.post(
+    'https://api.openai.com/v1/chat/completions',
+    {
+      model: 'gpt-4o-mini',
+      temperature: 0.1,
+      messages: [{ role: 'user', content: prompt }],
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${key}`,
+        'Content-Type': 'application/json',
+      },
+      timeout: 15000,
+    }
+  );
+
+  const text = res.data?.choices?.[0]?.message?.content || '';
+  return parseOpenAIJson(text);
+}
+
 function pickOpenFoodFactsProduct(products = []) {
   for (const p of products) {
     const n = p?.nutriments || {};
@@ -90,6 +227,12 @@ async function fetchFromOpenFoodFacts(food) {
 async function fetchNutrition(food) {
   const normalized = String(food || '').trim().toLowerCase();
   if (!normalized) throw new Error('Food name is required');
+
+  const fromUSDA = await fetchFromUSDA(normalized).catch(() => null);
+  if (fromUSDA) return fromUSDA;
+
+  const fromOpenAI = await fetchFromOpenAI(normalized).catch(() => null);
+  if (fromOpenAI) return fromOpenAI;
 
   const fromNinjas = await fetchFromCalorieNinjas(normalized).catch(() => null);
   if (fromNinjas) return fromNinjas;
