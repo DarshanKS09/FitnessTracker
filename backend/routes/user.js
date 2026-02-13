@@ -6,7 +6,7 @@ const { calculateTargetsFromProfile } = require('../utils/fitnessTargets');
 
 function pickProfileUpdates(body = {}) {
   const numericFields = ['age', 'height', 'weight'];
-  const textFields = ['name', 'gender', 'goal', 'activityLevel'];
+  const textFields = ['name', 'profilePic', 'gender', 'goal', 'activityLevel'];
   const updates = {};
 
   for (const field of textFields) {

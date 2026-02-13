@@ -12,6 +12,9 @@ import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import ProteinToday from './pages/ProteinToday';
+import CarbsToday from './pages/CarbsToday';
+import FatsToday from './pages/FatsToday';
 
 import ProtectedRoute from './components/ProtectedRoute';
 import { AuthContext } from './context/AuthContext';
@@ -73,6 +76,60 @@ function App() {
         element={
           <ProtectedRoute>
             <Profile />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/protein-today"
+        element={
+          <ProtectedRoute>
+            <ProteinToday />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/protein-today"
+        element={
+          <ProtectedRoute>
+            <ProteinToday />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/carbs-today"
+        element={
+          <ProtectedRoute>
+            <CarbsToday />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/carbs-today"
+        element={
+          <ProtectedRoute>
+            <CarbsToday />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/fats-today"
+        element={
+          <ProtectedRoute>
+            <FatsToday />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/dashboard/fats-today"
+        element={
+          <ProtectedRoute>
+            <FatsToday />
           </ProtectedRoute>
         }
       />

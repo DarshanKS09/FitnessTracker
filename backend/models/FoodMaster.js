@@ -33,16 +33,36 @@ const FoodMasterSchema = new mongoose.Schema(
     // grams per cup (for conversion)
     gramsPerCup: {
       type: Number,
+      default: 240,
     },
 
     // grams per bowl (optional)
     gramsPerBowl: {
       type: Number,
+      default: 300,
+    },
+
+    // grams per piece (generic default; can be adjusted per item later)
+    gramsPerPiece: {
+      type: Number,
+      default: 50,
+    },
+
+    // grams per glass (for liquids)
+    gramsPerGlass: {
+      type: Number,
+      default: 250,
+    },
+
+    // grams per katori
+    gramsPerKatori: {
+      type: Number,
+      default: 150,
     },
 
     source: {
       type: String,
-      enum: ['manual', 'usda', 'openai', 'calorieninjas', 'openfoodfacts'],
+      enum: ['manual', 'dataset', 'usda', 'openai', 'gemini', 'calorieninjas', 'openfoodfacts'],
       default: 'manual',
     },
   },

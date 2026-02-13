@@ -1,14 +1,108 @@
 const FoodLog = require('../models/FoodLog');
 const FoodMaster = require('../models/FoodMaster');
-const { fetchNutrition } = require('../services/nutritionService');
+const {
+  searchDatasetSuggestions,
+  lookupDatasetFood,
+} = require('../services/foodDatasetService');
 const mongoose = require('mongoose');
 
 function escapeRegExp(str) {
   return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
+function normalizeText(value) {
+  return String(value || '')
+    .toLowerCase()
+    .replace(/[^a-z0-9\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function scoreName(name, query) {
+  const n = normalizeText(name);
+  const q = normalizeText(query);
+  if (!n || !q) return 0;
+
+  let score = 0;
+  if (n === q) score += 100;
+  if (n.startsWith(q)) score += 70;
+
+  const words = n.split(' ').filter(Boolean);
+  const qWords = q.split(' ').filter(Boolean);
+  for (const token of qWords) {
+    if (n.includes(token)) score += 10;
+    if (words.some((w) => w.startsWith(token))) score += 20;
+  }
+  return score;
+}
+
+const DEFAULT_CONVERSIONS = {
+  gramsPerCup: 240,
+  gramsPerBowl: 300,
+  gramsPerPiece: 50,
+  gramsPerGlass: 250,
+  gramsPerKatori: 150,
+};
+
+function inferPieceGrams(datasetMatch) {
+  const name = normalizeText(datasetMatch?.name || '');
+  const category = normalizeText(datasetMatch?.category || '');
+
+  if (name.includes('egg')) return 50;
+  if (name.includes('idli')) return 55;
+  if (name.includes('dosa')) return 100;
+  if (name.includes('chapati') || name.includes('roti') || name.includes('thepla')) return 40;
+  if (name.includes('paratha') || name.includes('naan')) return 80;
+  if (name.includes('banana')) return 118;
+  if (name.includes('apple')) return 182;
+  if (name.includes('orange')) return 130;
+  if (name.includes('burger bun') || name.includes('bun')) return 70;
+  if (name.includes('bread')) return 30;
+  if (name.includes('samosa')) return 90;
+
+  if (category.includes('beverage') || String(datasetMatch?.servingUnit || '').toLowerCase().includes('ml')) {
+    return 250;
+  }
+
+  return DEFAULT_CONVERSIONS.gramsPerPiece;
+}
+
+function getConversionProfile(datasetMatch) {
+  const servingUnit = String(datasetMatch?.servingUnit || '').toLowerCase();
+  const isLiquid = servingUnit.includes('ml') || normalizeText(datasetMatch?.category || '').includes('beverage');
+
+  return {
+    gramsPerCup: isLiquid ? 240 : DEFAULT_CONVERSIONS.gramsPerCup,
+    gramsPerBowl: isLiquid ? 300 : DEFAULT_CONVERSIONS.gramsPerBowl,
+    gramsPerPiece: inferPieceGrams(datasetMatch),
+    gramsPerGlass: isLiquid ? 250 : DEFAULT_CONVERSIONS.gramsPerGlass,
+    gramsPerKatori: isLiquid ? 150 : DEFAULT_CONVERSIONS.gramsPerKatori,
+  };
+}
+
+async function ensureFoodConversions(food, datasetMatch) {
+  const profile = getConversionProfile(datasetMatch);
+  let changed = false;
+
+  for (const [field, fallback] of Object.entries(profile)) {
+    if (!Number.isFinite(Number(food[field])) || Number(food[field]) <= 0) {
+      food[field] = fallback;
+      changed = true;
+    }
+  }
+
+  if (changed) {
+    await food.save();
+  }
+}
+
 async function findOrCreateFood(normalizedName) {
   let food = await FoodMaster.findOne({ name: normalizedName });
+  const datasetMatch = await lookupDatasetFood(normalizedName);
+
+  if (!datasetMatch) {
+    throw new Error('Food not in dataset. Please select from suggestions.');
+  }
 
   if (!food) {
     food = await FoodMaster.findOne({
@@ -17,29 +111,30 @@ async function findOrCreateFood(normalizedName) {
   }
 
   if (!food) {
-    const nutrition = await fetchNutrition(normalizedName);
-
+    const conv = getConversionProfile(datasetMatch);
     food = await FoodMaster.create({
-      name: normalizedName,
-      caloriesPer100g: Number(nutrition.calories),
-      proteinPer100g: Number(nutrition.protein),
-      carbsPer100g: Number(nutrition.carbs),
-      fatsPer100g: Number(nutrition.fats),
-      gramsPerCup: 240,
-      gramsPerBowl: 300,
-      source: nutrition.source,
+      name: datasetMatch.name,
+      caloriesPer100g: Number(datasetMatch.calories),
+      proteinPer100g: Number(datasetMatch.protein),
+      carbsPer100g: Number(datasetMatch.carbs),
+      fatsPer100g: Number(datasetMatch.fats),
+      gramsPerCup: conv.gramsPerCup,
+      gramsPerBowl: conv.gramsPerBowl,
+      gramsPerPiece: conv.gramsPerPiece,
+      gramsPerGlass: conv.gramsPerGlass,
+      gramsPerKatori: conv.gramsPerKatori,
+      source: 'dataset',
     });
-  } else if (!food.source) {
-    // Backfill legacy rows that were created before source tracking.
-    const nutrition = await fetchNutrition(normalizedName);
-    food.caloriesPer100g = Number(nutrition.calories);
-    food.proteinPer100g = Number(nutrition.protein);
-    food.carbsPer100g = Number(nutrition.carbs);
-    food.fatsPer100g = Number(nutrition.fats);
-    food.source = nutrition.source;
+  } else if (!food.source || food.source === 'manual') {
+    food.caloriesPer100g = Number(datasetMatch.calories);
+    food.proteinPer100g = Number(datasetMatch.protein);
+    food.carbsPer100g = Number(datasetMatch.carbs);
+    food.fatsPer100g = Number(datasetMatch.fats);
+    food.source = 'dataset';
     await food.save();
   }
 
+  await ensureFoodConversions(food, datasetMatch);
   return food;
 }
 
@@ -47,17 +142,80 @@ function calculateGrams(food, qty, unit) {
   if (unit === 'g' || unit === 'grams') return qty;
 
   if (unit === 'cup') {
-    if (!food.gramsPerCup) throw new Error('Cup conversion unavailable');
-    return qty * food.gramsPerCup;
+    return qty * Number(food.gramsPerCup || DEFAULT_CONVERSIONS.gramsPerCup);
   }
 
   if (unit === 'bowl') {
-    if (!food.gramsPerBowl) throw new Error('Bowl conversion unavailable');
-    return qty * food.gramsPerBowl;
+    return qty * Number(food.gramsPerBowl || DEFAULT_CONVERSIONS.gramsPerBowl);
+  }
+
+  if (unit === 'piece' || unit === 'pieces') {
+    return qty * Number(food.gramsPerPiece || DEFAULT_CONVERSIONS.gramsPerPiece);
+  }
+
+  if (unit === 'glass') {
+    return qty * Number(food.gramsPerGlass || DEFAULT_CONVERSIONS.gramsPerGlass);
+  }
+
+  if (unit === 'katori') {
+    return qty * Number(food.gramsPerKatori || DEFAULT_CONVERSIONS.gramsPerKatori);
   }
 
   throw new Error('Invalid unit');
 }
+
+function normalizeUnit(unit) {
+  const raw = String(unit || '').trim().toLowerCase();
+
+  if (['g', 'gram', 'grams', 'gm', 'gms'].includes(raw)) return 'grams';
+  if (['cup', 'cups'].includes(raw)) return 'cup';
+  if (['bowl', 'bowls'].includes(raw)) return 'bowl';
+  if (['piece', 'pieces', 'pc', 'pcs'].includes(raw)) return 'piece';
+  if (['glass', 'glasses'].includes(raw)) return 'glass';
+  if (['katori', 'katoris'].includes(raw)) return 'katori';
+
+  return '';
+}
+
+/* ======================
+   FOOD SUGGESTIONS
+====================== */
+
+exports.getFoodSuggestions = async (req, res) => {
+  try {
+    const q = String(req.query?.q || '').trim();
+    if (q.length < 1) return res.json([]);
+
+    const datasetSuggestions = await searchDatasetSuggestions(q, 12).catch(() => []);
+
+    const seen = new Set();
+    const merged = [];
+
+    for (const item of datasetSuggestions) {
+      const name = String(item.name || '').trim();
+      if (!name) continue;
+      const k = name.toLowerCase();
+      if (seen.has(k)) continue;
+      seen.add(k);
+      merged.push({
+        name,
+        source: 'dataset',
+        calories: Number(item.calories || 0),
+        protein: Number(item.protein || 0),
+        carbs: Number(item.carbs || 0),
+        fats: Number(item.fats || 0),
+        score: scoreName(name, q),
+      });
+    }
+
+    merged.sort((a, b) => (b.score || 0) - (a.score || 0));
+    return res.json(
+      merged.slice(0, 12).map(({ score, ...rest }) => rest)
+    );
+  } catch (err) {
+    return res.status(500).json({ message: 'Failed to fetch food suggestions' });
+  }
+};
 
 /* ======================
    ADD FOOD
@@ -76,14 +234,15 @@ exports.addFood = async (req, res) => {
     if (!Number.isFinite(qty) || qty <= 0) {
       return res.status(400).json({ message: 'Quantity must be a positive number' });
     }
-    if (!['g', 'grams', 'cup', 'bowl'].includes(unit)) {
+    const normalizedUnit = normalizeUnit(unit);
+    if (!normalizedUnit) {
       return res.status(400).json({ message: 'Invalid unit' });
     }
 
     const food = await findOrCreateFood(normalizedName);
     let grams;
     try {
-      grams = calculateGrams(food, qty, unit);
+      grams = calculateGrams(food, qty, normalizedUnit);
     } catch (e) {
       return res.status(400).json({ message: e.message });
     }
@@ -101,7 +260,7 @@ exports.addFood = async (req, res) => {
       foodId: food._id,
       foodName: food.name,
       quantity: qty,
-      unit,
+      unit: normalizedUnit,
       grams,
       mealType,
       calories,
@@ -114,7 +273,11 @@ exports.addFood = async (req, res) => {
     return res.status(201).json(log);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: err.message || 'Failed to add food' });
+    const msg = err.message || 'Failed to add food';
+    if (msg.toLowerCase().includes('dataset')) {
+      return res.status(400).json({ message: msg });
+    }
+    return res.status(500).json({ message: msg });
   }
 };
 
@@ -135,7 +298,8 @@ exports.updateFood = async (req, res) => {
 
     const nextName = String(foodName || log.foodName).trim().toLowerCase();
     const qty = quantity !== undefined ? Number(quantity) : Number(log.quantity || log.grams);
-    const nextUnit = unit || log.unit || 'grams';
+    const nextUnitRaw = unit || log.unit || 'grams';
+    const nextUnit = normalizeUnit(nextUnitRaw);
     const nextMealType = mealType || log.mealType;
 
     if (!nextName || !nextMealType) {
@@ -144,7 +308,7 @@ exports.updateFood = async (req, res) => {
     if (!Number.isFinite(qty) || qty <= 0) {
       return res.status(400).json({ message: 'Quantity must be a positive number' });
     }
-    if (!['g', 'grams', 'cup', 'bowl'].includes(nextUnit)) {
+    if (!nextUnit) {
       return res.status(400).json({ message: 'Invalid unit' });
     }
 
@@ -172,7 +336,11 @@ exports.updateFood = async (req, res) => {
     return res.json(log);
   } catch (err) {
     console.error(err);
-    return res.status(500).json({ message: err.message || 'Failed to update food log' });
+    const msg = err.message || 'Failed to update food log';
+    if (msg.toLowerCase().includes('dataset')) {
+      return res.status(400).json({ message: msg });
+    }
+    return res.status(500).json({ message: msg });
   }
 };
 

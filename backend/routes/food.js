@@ -6,6 +6,7 @@ const authMiddleware = require('../middleware/authMiddleware');
 // Primary REST-style routes used by frontend
 router.post('/', authMiddleware, foodController.addFood);
 router.get('/', authMiddleware, foodController.getMyFood);
+router.get('/suggestions', authMiddleware, foodController.getFoodSuggestions);
 router.put('/:id', authMiddleware, foodController.updateFood);
 router.delete('/:id', authMiddleware, foodController.deleteFood);
 router.get('/daily-totals', authMiddleware, foodController.dailyTotals);

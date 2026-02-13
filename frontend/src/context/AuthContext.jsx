@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import api from '../utils/api';
 import { setAuthToken } from '../utils/api';
 
 export const AuthContext = createContext();
@@ -17,7 +17,7 @@ export const AuthProvider = ({ children }) => {
     if (accessToken) setAuthToken(accessToken);
     else setAuthToken(null);
 
-    const interceptor = axios.interceptors.response.use(
+    const interceptor = api.interceptors.response.use(
       (res) => res,
       async (err) => {
         const original = err.config;
@@ -25,7 +25,7 @@ export const AuthProvider = ({ children }) => {
         if (err.response?.status === 401 && !original._retry) {
           original._retry = true;
           try {
-            const r = await axios.post('/api/auth/refresh');
+            const r = await api.post('/auth/refresh');
             const newToken = r.data.accessToken;
 
             if (newToken) {
@@ -34,7 +34,7 @@ export const AuthProvider = ({ children }) => {
               setAuthToken(newToken);
 
               original.headers['Authorization'] = `Bearer ${newToken}`;
-              return axios(original);
+              return api(original);
             }
           } catch (e) {
             logout();
@@ -45,7 +45,7 @@ export const AuthProvider = ({ children }) => {
       }
     );
 
-    return () => axios.interceptors.response.eject(interceptor);
+    return () => api.interceptors.response.eject(interceptor);
   }, [accessToken]);
 
   const login = (token, userData) => {
@@ -59,7 +59,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await axios.post('/api/auth/logout');
+      await api.post('/auth/logout');
     } catch (e) {}
 
     setUser(null);

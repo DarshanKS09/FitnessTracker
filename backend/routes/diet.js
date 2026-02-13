@@ -1,13 +1,13 @@
 const express = require('express');
 const router = express.Router();
 const authMiddleware = require('../middleware/authMiddleware');
+const { generatePlan, getPlan } = require('../controllers/dietController');
 
-router.get('/', authMiddleware, (req, res) => {
-  res.json({ message: 'Diet route working' });
-});
+router.post('/generate', authMiddleware, generatePlan);
+router.get('/my', authMiddleware, getPlan);
 
-router.post('/', authMiddleware, (req, res) => {
-  res.json({ message: 'Diet POST working' });
-});
+// Backward-compatible endpoints
+router.post('/', authMiddleware, generatePlan);
+router.get('/', authMiddleware, getPlan);
 
 module.exports = router;

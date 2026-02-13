@@ -28,7 +28,7 @@ const foodLogSchema = new mongoose.Schema(
 
     unit: {
       type: String,
-      enum: ['g', 'grams', 'cup', 'bowl'],
+      enum: ['g', 'grams', 'cup', 'bowl', 'piece', 'pieces', 'glass', 'katori'],
       required: true,
     },
 

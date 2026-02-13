@@ -139,15 +139,15 @@ export default function Workout() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
+    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-        <h2 className="text-3xl font-bold text-emerald-800">
+        <h2 className="text-2xl sm:text-3xl font-bold text-emerald-800">
           Workout Tracker
         </h2>
 
         <form
           onSubmit={submit}
-          className="bg-white rounded-3xl shadow-lg p-8 space-y-6"
+          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-6"
         >
           <select
             value={type}
@@ -191,7 +191,7 @@ export default function Workout() {
           </button>
         </form>
 
-        <div className="bg-white rounded-3xl shadow-lg p-8 space-y-4">
+        <div className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-4">
           <h3 className="text-lg font-semibold text-emerald-800">
             Today's Workouts
           </h3>
@@ -205,7 +205,7 @@ export default function Workout() {
                 className="border border-emerald-100 rounded-xl p-4 bg-emerald-50"
               >
                 {editingId === item._id ? (
-                  <div className="grid md:grid-cols-5 gap-3 items-center">
+                  <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
                     <select
                       value={editForm.type}
                       onChange={(e) => {
@@ -261,7 +261,7 @@ export default function Workout() {
                     </div>
                   </div>
                 ) : (
-                  <div className="flex justify-between items-center">
+                  <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
                     <div>
                       <p className="font-semibold text-emerald-800">
                         {item.type}
@@ -272,21 +272,21 @@ export default function Workout() {
                           : `${item.minutes} minutes`}
                       </p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="w-full sm:w-auto flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3">
                       <p className="text-emerald-700 font-medium">
                         {item.caloriesBurned || 0} kcal
                       </p>
                       <button
                         type="button"
                         onClick={() => startEdit(item)}
-                        className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                        className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100 w-full sm:w-auto"
                       >
                         Edit Workout
                       </button>
                       <button
                         type="button"
                         onClick={() => removeWorkout(item._id)}
-                        className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
+                        className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100 w-full sm:w-auto"
                       >
                         Delete
                       </button>

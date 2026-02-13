@@ -63,6 +63,9 @@ export const addFood = (data) =>
 export const getMyFood = () =>
   api.get('/food/my');
 
+export const getFoodSuggestions = (q) =>
+  api.get('/food/suggestions', { params: { q } });
+
 export const dailyTotals = () =>
   api.get('/food/daily');
 

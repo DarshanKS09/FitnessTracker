@@ -1,22 +1,25 @@
 const axios = require('axios');
 
-const OPENAI_API = 'https://api.openai.com/v1/chat/completions';
+const GEMINI_API = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent';
 
 async function fetchNutrition(food) {
-  if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY not set');
+  const key = process.env.GEMINI_API_KEY || process.env.GOOGLE_API_KEY;
+  if (!key) throw new Error('GEMINI_API_KEY (or GOOGLE_API_KEY) not set');
 
-  const prompt = `Return a JSON object containing per 100g nutrition values for "${food}" with keys: calories, protein, carbs, fats. All numeric values only.`;
+  const prompt = `Return ONLY JSON for per 100g nutrition values for "${food}" with keys: calories, protein, carbs, fats. All values must be numbers.`;
 
-  const res = await axios.post(OPENAI_API, {
-    model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
-    temperature: 0.2,
-    max_tokens: 200,
-  }, {
-    headers: { Authorization: `Bearer ${process.env.OPENAI_API_KEY}` }
-  });
+  const res = await axios.post(
+    `${GEMINI_API}?key=${encodeURIComponent(key)}`,
+    {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.2 },
+    },
+    {
+      headers: { 'Content-Type': 'application/json' },
+    }
+  );
 
-  const text = res.data.choices?.[0]?.message?.content || '';
+  const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
 
   try {
     // Try to find JSON in the text
@@ -30,7 +33,7 @@ async function fetchNutrition(food) {
       fats: Number(data.fats) || 0,
     };
   } catch (err) {
-    throw new Error('Failed to parse nutrition from OpenAI response');
+    throw new Error('Failed to parse nutrition from Gemini response');
   }
 }
 

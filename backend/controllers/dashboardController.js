@@ -23,11 +23,13 @@ async function dashboard(req, res) {
           _id: null,
           calories: { $sum: '$calories' },
           protein: { $sum: '$protein' },
+          carbs: { $sum: '$carbs' },
+          fats: { $sum: '$fats' },
         },
       },
     ]);
 
-    const foodTotals = daily[0] || { calories: 0, protein: 0 };
+    const foodTotals = daily[0] || { calories: 0, protein: 0, carbs: 0, fats: 0 };
 
     // Burned calories
     const workouts = await WorkoutLog.aggregate([
