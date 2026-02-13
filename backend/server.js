@@ -48,9 +48,13 @@ app.use(
 );
 
 // Rate Limiter
+const isProd = process.env.NODE_ENV === 'production';
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: isProd ? 1200 : 10000,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { message: 'Too many requests, please try again shortly.' },
 });
 
 app.use('/api/', apiLimiter);

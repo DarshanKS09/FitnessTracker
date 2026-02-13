@@ -2,7 +2,17 @@ const Joi = require('joi');
 
 const sendOtpSchema = Joi.object({ email: Joi.string().email().optional(), phone: Joi.string().optional() }).or('email', 'phone');
 const verifyOtpSchema = Joi.object({ email: Joi.string().email().required(), code: Joi.string().length(6).required() });
-const registerSchema = Joi.object({ email: Joi.string().email().required(), password: Joi.string().min(8).required(), name: Joi.string().min(2).required() });
+const strongPasswordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const registerSchema = Joi.object({
+  email: Joi.string().email().required(),
+  password: Joi.string()
+    .pattern(strongPasswordRegex)
+    .required()
+    .messages({
+      'string.pattern.base': 'Password must include uppercase, lowercase, number, special character, and be at least 8 characters',
+    }),
+  name: Joi.string().min(2).required(),
+});
 const loginSchema = Joi.object({ email: Joi.string().email().required(), password: Joi.string().required() });
 
 const foodLogSchema = Joi.object({ foodName: Joi.string().required(), grams: Joi.number().positive().required(), bodyWeight: Joi.number().positive().required(), mealType: Joi.string().optional() });

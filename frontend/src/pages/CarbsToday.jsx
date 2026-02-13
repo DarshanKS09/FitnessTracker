@@ -38,9 +38,9 @@ export default function CarbsToday() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e8fff5] via-[#dff7ef] to-[#d8f2e9] p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-[#e8fff5] via-[#dff7ef] to-[#d8f2e9] p-4 sm:p-6">
       <div className="max-w-4xl mx-auto">
-        <div className="rounded-3xl border border-emerald-200 bg-white/95 shadow-lg p-5 sm:p-7">
+        <div className="rounded-3xl border border-emerald-200 bg-white/95 shadow-lg p-5 sm:p-7 fx-card reveal" style={{ '--d': '40ms' }}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-emerald-900">Today&apos;s Carbs Foods</h1>

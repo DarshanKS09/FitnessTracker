@@ -13,7 +13,8 @@ export const NotificationProvider = ({ children }) => {
 
   useEffect(() => {
     if (!notif) return;
-    const t = setTimeout(() => setNotif(null), notif.duration || 4000);
+    const timeoutMs = Math.min(1000, Number(notif.duration) || 1000);
+    const t = setTimeout(() => setNotif(null), timeoutMs);
     return () => clearTimeout(t);
   }, [notif]);
 
@@ -25,7 +26,7 @@ export const NotificationProvider = ({ children }) => {
         <div className={`fixed top-4 right-4 z-50 max-w-sm p-3 rounded shadow-md text-white ${notif.type === 'success' ? 'bg-green-600' : notif.type === 'error' ? 'bg-red-600' : 'bg-blue-600'}`}>
           <div className="flex items-center justify-between gap-4">
             <div className="text-sm">{notif.message}</div>
-            <button onClick={clear} className="text-white opacity-80 hover:opacity-100">âœ | </button>
+            <button onClick={clear} className="text-white opacity-80 hover:opacity-100">ï¿½ | </button>
           </div>
         </div>
       )}

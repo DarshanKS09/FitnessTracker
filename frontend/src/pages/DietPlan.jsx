@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { generateDiet, getDiet } from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
+import ThemedSelect from '../components/ThemedSelect';
 
 export default function Diet() {
   const { notify } = useNotification();
@@ -53,7 +54,7 @@ export default function Diet() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto space-y-8">
 
         <h2 className="text-2xl sm:text-3xl font-bold text-emerald-800">
@@ -62,7 +63,8 @@ export default function Diet() {
 
         <form
           onSubmit={submit}
-          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 grid grid-cols-1 md:grid-cols-2 gap-6 fx-card reveal"
+          style={{ '--d': '40ms' }}
         >
           <input
             type="number"
@@ -73,14 +75,11 @@ export default function Diet() {
             required
           />
 
-          <select
+          <ThemedSelect
             value={form.gender}
             onChange={(e) => setForm({ ...form, gender: e.target.value })}
-            className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Male</option>
-            <option>Female</option>
-          </select>
+            options={['Male', 'Female']}
+          />
 
           <input
             type="number"
@@ -100,35 +99,23 @@ export default function Diet() {
             required
           />
 
-          <select
+          <ThemedSelect
             value={form.activityLevel}
             onChange={(e) => setForm({ ...form, activityLevel: e.target.value })}
-            className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Sedentary</option>
-            <option>Light</option>
-            <option>Moderate</option>
-            <option>Active</option>
-          </select>
+            options={['Sedentary', 'Light', 'Moderate', 'Active']}
+          />
 
-          <select
+          <ThemedSelect
             value={form.goal}
             onChange={(e) => setForm({ ...form, goal: e.target.value })}
-            className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Maintenance</option>
-            <option>Cutting</option>
-            <option>Bulking</option>
-          </select>
+            options={['Maintenance', 'Cutting', 'Bulking']}
+          />
 
-          <select
+          <ThemedSelect
             value={form.preference}
             onChange={(e) => setForm({ ...form, preference: e.target.value })}
-            className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Veg</option>
-            <option>Non-Veg</option>
-          </select>
+            options={['Veg', 'Non-Veg']}
+          />
 
           <button
             type="submit"
@@ -139,7 +126,7 @@ export default function Diet() {
         </form>
 
         {result && (
-          <div className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-3">
+          <div className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-3 fx-card reveal" style={{ '--d': '90ms' }}>
             <h3 className="text-xl font-semibold text-emerald-800">
               Your Plan
             </h3>

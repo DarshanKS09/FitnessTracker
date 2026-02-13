@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { getProfile, updateProfile } from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
 import { AuthContext } from '../context/AuthContext';
+import ThemedSelect from '../components/ThemedSelect';
 
 export default function Profile() {
   const { notify } = useNotification();
@@ -249,7 +250,7 @@ export default function Profile() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto space-y-8">
         <h2 className="text-2xl sm:text-3xl font-bold text-emerald-800">
           Fitness Profile
@@ -257,7 +258,8 @@ export default function Profile() {
 
         <form
           onSubmit={submit}
-          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-6"
+          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-6 fx-card reveal"
+          style={{ '--d': '40ms' }}
         >
           <div className="flex flex-col sm:flex-row sm:items-center gap-4">
             <img
@@ -318,14 +320,11 @@ export default function Profile() {
               className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
             />
 
-            <select
+            <ThemedSelect
               value={form.gender}
               onChange={(e) => setForm({ ...form, gender: e.target.value })}
-              className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
-            >
-              <option>Male</option>
-              <option>Female</option>
-            </select>
+              options={['Male', 'Female']}
+            />
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -346,28 +345,19 @@ export default function Profile() {
             />
           </div>
 
-          <select
+          <ThemedSelect
             value={form.goal}
             onChange={(e) => setForm({ ...form, goal: e.target.value })}
-            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Maintenance</option>
-            <option>Cutting</option>
-            <option>Bulking</option>
-          </select>
+            options={['Maintenance', 'Cutting', 'Bulking']}
+          />
 
-          <select
+          <ThemedSelect
             value={form.activityLevel}
             onChange={(e) =>
               setForm({ ...form, activityLevel: e.target.value })
             }
-            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
-          >
-            <option>Sedentary</option>
-            <option>Light</option>
-            <option>Moderate</option>
-            <option>Active</option>
-          </select>
+            options={['Sedentary', 'Light', 'Moderate', 'Active']}
+          />
 
           {bmi && (
             <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">

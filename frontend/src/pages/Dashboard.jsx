@@ -102,9 +102,9 @@ const Dashboard = () => {
   const ringOffset = ringCircumference - (ringCircumference * caloriePercent) / 100;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e8fff5] via-[#dff7ef] to-[#d8f2e9] p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-[#e8fff5] via-[#dff7ef] to-[#d8f2e9] p-4 sm:p-6">
       <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8">
-        <section className="relative overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 p-5 sm:p-8 shadow-xl">
+        <section className="relative reveal overflow-hidden rounded-3xl border border-emerald-200 bg-gradient-to-r from-emerald-700 via-emerald-600 to-teal-600 p-5 sm:p-8 shadow-xl fx-card" style={{ '--d': '30ms' }}>
           <div className="absolute -top-20 -right-16 h-44 w-44 rounded-full bg-white/15" />
           <div className="absolute -bottom-16 -left-16 h-40 w-40 rounded-full bg-white/10" />
           <div className="absolute inset-x-0 bottom-0 h-px bg-gradient-to-r from-transparent via-white/70 to-transparent" />
@@ -114,7 +114,7 @@ const Dashboard = () => {
               <img
                 src={profilePic || user?.profilePic || 'https://placehold.co/48x48?text=U'}
                 alt={user?.name ? `${user.name} profile` : 'Profile'}
-                className="h-14 w-14 sm:h-16 sm:w-16 lg:h-24 lg:w-24 xl:h-28 xl:w-28 rounded-full object-cover border-2 border-white/70 shadow-lg bg-white/20"
+                className="h-14 w-14 sm:h-16 sm:w-16 lg:h-24 lg:w-24 xl:h-28 xl:w-28 rounded-full object-cover border-2 border-white/70 shadow-lg bg-white/20 fx-pulse"
                 onError={(e) => {
                   e.currentTarget.src = 'https://placehold.co/48x48?text=U';
                 }}
@@ -130,7 +130,7 @@ const Dashboard = () => {
         </section>
 
         <section className="grid grid-cols-1 xl:grid-cols-[1.2fr_1fr] gap-5 sm:gap-6 items-start">
-          <div className="rounded-3xl border border-emerald-200 bg-white/95 p-5 sm:p-6 shadow-lg xl:self-start">
+          <div className="rounded-3xl reveal fx-card border border-emerald-200 bg-white/95 p-5 sm:p-6 shadow-lg xl:self-start" style={{ '--d': '90ms' }}>
             <div className="flex items-center justify-between gap-3">
               <h2 className="text-lg sm:text-xl font-semibold text-emerald-900">Calorie Progress</h2>
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-medium text-emerald-700">
@@ -145,7 +145,7 @@ const Dashboard = () => {
             </p>
 
             <div className="mt-5 flex flex-col items-center">
-              <div className="relative h-44 w-44 sm:h-56 sm:w-56">
+              <div className="relative h-44 w-44 sm:h-56 sm:w-56 float-soft">
                 <svg className="h-full w-full -rotate-90" viewBox="0 0 240 240" aria-hidden="true">
                   <circle cx="120" cy="120" r={ringRadius} stroke="#d1fae5" strokeWidth="16" fill="none" />
                   <circle
@@ -166,7 +166,7 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="mt-3 text-sm font-medium text-emerald-700">Daily Calories</p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5">
+              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 fx-card">
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-emerald-700" fill="currentColor" aria-hidden="true">
                   <path d="M2 9h2v6H2V9zm3-2h2v10H5V7zm3 4h8v2H8v-2zm9-4h2v10h-2V7zm3 2h2v6h-2V9z" />
                 </svg>
@@ -176,7 +176,7 @@ const Dashboard = () => {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-1 gap-4">
-            <div className="rounded-2xl border border-emerald-200 bg-gradient-to-br from-emerald-100 to-emerald-50 p-5 shadow">
+            <div className="rounded-2xl reveal fx-card border border-emerald-200 bg-gradient-to-br from-emerald-100 to-emerald-50 p-5 shadow" style={{ '--d': '120ms' }}>
               <p className="text-xs uppercase tracking-wide text-emerald-700">Protein</p>
               <p className="mt-1 text-2xl font-bold text-emerald-900">{proteinToday}g</p>
               <div className="mt-3 h-2 w-full rounded-full bg-white/80">
@@ -194,7 +194,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-cyan-200 bg-gradient-to-br from-cyan-100 to-sky-50 p-5 shadow">
+            <div className="rounded-2xl reveal fx-card border border-cyan-200 bg-gradient-to-br from-cyan-100 to-sky-50 p-5 shadow" style={{ '--d': '160ms' }}>
               <p className="text-xs uppercase tracking-wide text-cyan-700">Carbs</p>
               <p className="mt-1 text-2xl font-bold text-cyan-900">{carbsToday}g</p>
               <div className="mt-3 h-2 w-full rounded-full bg-white/80">
@@ -212,7 +212,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-100 to-yellow-50 p-5 shadow">
+            <div className="rounded-2xl reveal fx-card border border-amber-200 bg-gradient-to-br from-amber-100 to-yellow-50 p-5 shadow" style={{ '--d': '200ms' }}>
               <p className="text-xs uppercase tracking-wide text-amber-700">Fats</p>
               <p className="mt-1 text-2xl font-bold text-amber-900">{fatsToday}g</p>
               <div className="mt-3 h-2 w-full rounded-full bg-white/80">
@@ -230,7 +230,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-teal-200 bg-gradient-to-br from-teal-100 to-cyan-50 p-5 shadow">
+            <div className="rounded-2xl reveal fx-card border border-teal-200 bg-gradient-to-br from-teal-100 to-cyan-50 p-5 shadow" style={{ '--d': '240ms' }}>
               <p className="text-xs uppercase tracking-wide text-teal-700">Calories Burned</p>
               <p className="mt-1 text-2xl font-bold text-teal-900">{burnedToday}</p>
               <p className="mt-2 text-xs text-teal-700">Tracked from workout logs</p>

@@ -8,6 +8,7 @@ import {
   deleteFood,
 } from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
+import ThemedSelect from '../components/ThemedSelect';
 
 const mealTypes = [
   'Breakfast',
@@ -185,11 +186,11 @@ export default function FoodTracker() {
   );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
       <div className="max-w-5xl mx-auto space-y-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-emerald-800">Food Tracker</h2>
 
-        <div className="bg-white rounded-2xl shadow p-4 sm:p-5 border border-emerald-200">
+        <div className="bg-white rounded-2xl shadow p-4 sm:p-5 border border-emerald-200 fx-card reveal" style={{ '--d': '30ms' }}>
           <p className="text-xs uppercase tracking-wide font-semibold text-emerald-700 mb-1">
             Log Section
           </p>
@@ -213,7 +214,8 @@ export default function FoodTracker() {
 
         <form
           onSubmit={submit}
-          className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 grid grid-cols-1 md:grid-cols-4 gap-4 border border-emerald-200"
+          className="bg-white rounded-2xl shadow-lg p-4 sm:p-6 grid grid-cols-1 md:grid-cols-4 gap-4 border border-emerald-200 fx-card reveal"
+          style={{ '--d': '60ms' }}
         >
             <div className="relative">
               <input
@@ -268,15 +270,11 @@ export default function FoodTracker() {
               className="p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400"
               required
             />
-            <select
+            <ThemedSelect
               value={food.unit}
               onChange={(e) => setFood({ ...food, unit: e.target.value })}
-              className="p-3 border rounded-lg transition-all duration-150 hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.18)] focus:outline-none focus:ring-2 focus:ring-emerald-400"
-            >
-              {units.map((u) => (
-                <option key={u}>{u}</option>
-              ))}
-            </select>
+              options={units}
+            />
             <button
               type="submit"
               disabled={!selectedSuggestion}
@@ -304,21 +302,16 @@ export default function FoodTracker() {
               View Section
             </p>
             <p className="text-teal-800 text-sm mb-2 font-medium">Choose Meal to View Logs</p>
-            <select
+            <ThemedSelect
               value={viewMeal}
               onChange={(e) => setViewMeal(e.target.value)}
-              className="w-full p-2.5 border border-teal-300 rounded-lg bg-white transition-all duration-150 hover:border-teal-400 hover:shadow-[0_0_0_3px_rgba(45,212,191,0.2)] focus:outline-none focus:ring-2 focus:ring-teal-400"
-            >
-              {mealTypes.map((meal) => (
-                <option key={meal} value={meal}>
-                  {meal}
-                </option>
-              ))}
-            </select>
+              options={mealTypes}
+              className="p-2.5"
+            />
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6">
+        <div className="bg-white rounded-2xl shadow-lg p-3 sm:p-6 fx-card reveal" style={{ '--d': '100ms' }}>
           <h3 className="text-lg font-semibold text-emerald-800 mb-4">
             {viewMeal} - {dayName}, {formattedDate}
           </h3>
@@ -352,24 +345,18 @@ export default function FoodTracker() {
                           onChange={(e) => setEditForm({ ...editForm, quantity: e.target.value })}
                           className="p-2 border rounded-lg"
                         />
-                        <select
+                        <ThemedSelect
                           value={editForm.unit}
                           onChange={(e) => setEditForm({ ...editForm, unit: e.target.value })}
-                          className="p-2 border rounded-lg transition-all duration-150 hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.18)]"
-                        >
-                          {units.map((u) => (
-                            <option key={u}>{u}</option>
-                          ))}
-                        </select>
-                        <select
+                          options={units}
+                          className="p-2"
+                        />
+                        <ThemedSelect
                           value={editForm.mealType}
                           onChange={(e) => setEditForm({ ...editForm, mealType: e.target.value })}
-                          className="p-2 border rounded-lg transition-all duration-150 hover:border-emerald-400 hover:shadow-[0_0_0_3px_rgba(16,185,129,0.18)]"
-                        >
-                          {mealTypes.map((m) => (
-                            <option key={m}>{m}</option>
-                          ))}
-                        </select>
+                          options={mealTypes}
+                          className="p-2"
+                        />
                         <button
                           type="button"
                           onClick={() => saveEdit(item._id)}

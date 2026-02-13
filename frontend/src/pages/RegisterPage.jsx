@@ -6,6 +6,23 @@ import {
   register as registerApi,
 } from '../utils/api';
 
+function getPasswordChecks(password) {
+  return {
+    minLength: password.length >= 8,
+    uppercase: /[A-Z]/.test(password),
+    lowercase: /[a-z]/.test(password),
+    number: /\d/.test(password),
+    special: /[^A-Za-z0-9]/.test(password),
+  };
+}
+
+function getPasswordStrength(password) {
+  if (!password) return 0;
+  const checks = getPasswordChecks(password);
+  const passed = Object.values(checks).filter(Boolean).length;
+  return Math.round((passed / 5) * 100);
+}
+
 const RegisterPage = () => {
   const [step, setStep] = useState('email'); // 'email' | 'verify' | 'password' | 'done'
   const [email, setEmail] = useState('');
@@ -68,8 +85,10 @@ const RegisterPage = () => {
       return;
     }
 
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters');
+    const checks = getPasswordChecks(password);
+    const isStrongPassword = Object.values(checks).every(Boolean);
+    if (!isStrongPassword) {
+      setError('Password must include uppercase, lowercase, number, special character, and be at least 8 characters');
       return;
     }
     if (password !== confirmPassword) {
@@ -80,6 +99,8 @@ const RegisterPage = () => {
     try {
       setLoading(true);
       const res = await registerApi({ email, password, name });
+      const onboardingKey = `ft_onboard_${email.trim().toLowerCase()}`;
+      localStorage.setItem(onboardingKey, '1');
       setMessage(res.data.message || 'Registered successfully');
       setStep('done');
       setTimeout(() => navigate('/'), 1400);
@@ -89,6 +110,27 @@ const RegisterPage = () => {
       setLoading(false);
     }
   };
+
+  const passwordChecks = getPasswordChecks(password);
+  const passwordStrength = getPasswordStrength(password);
+  const passwordStrengthLabel =
+    passwordStrength >= 100
+      ? 'Strong'
+      : passwordStrength >= 80
+        ? 'Good'
+        : passwordStrength >= 60
+          ? 'Fair'
+          : passwordStrength > 0
+            ? 'Weak'
+            : 'Start typing';
+  const strengthBarClass =
+    passwordStrength >= 100
+      ? 'bg-emerald-600'
+      : passwordStrength >= 80
+        ? 'bg-lime-500'
+        : passwordStrength >= 60
+          ? 'bg-amber-500'
+          : 'bg-red-500';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 px-4 py-8 md:py-12">
@@ -247,12 +289,31 @@ const RegisterPage = () => {
                   <label className="text-sm font-medium text-emerald-900">Password</label>
                   <input
                     type="password"
-                    placeholder="Password (min 8 chars)"
+                    placeholder="Strong password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required
                     className="w-full px-4 py-3 border border-emerald-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-400"
                   />
+                  <div className="rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-3">
+                    <div className="flex items-center justify-between text-xs text-emerald-800">
+                      <span>Password Strength</span>
+                      <span className="font-semibold">{passwordStrengthLabel}</span>
+                    </div>
+                    <div className="mt-2 h-2 w-full rounded-full bg-white/80 overflow-hidden">
+                      <div
+                        className={`h-2 rounded-full transition-all duration-300 ${strengthBarClass}`}
+                        style={{ width: `${passwordStrength}%` }}
+                      />
+                    </div>
+                    <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-1 text-xs">
+                      <p className={passwordChecks.minLength ? 'text-emerald-700' : 'text-gray-500'}>At least 8 characters</p>
+                      <p className={passwordChecks.uppercase ? 'text-emerald-700' : 'text-gray-500'}>One uppercase letter</p>
+                      <p className={passwordChecks.lowercase ? 'text-emerald-700' : 'text-gray-500'}>One lowercase letter</p>
+                      <p className={passwordChecks.number ? 'text-emerald-700' : 'text-gray-500'}>One number</p>
+                      <p className={passwordChecks.special ? 'text-emerald-700' : 'text-gray-500'}>One special character</p>
+                    </div>
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <label className="text-sm font-medium text-emerald-900">Confirm Password</label>

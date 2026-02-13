@@ -31,7 +31,15 @@ const LoginPage = () => {
       setAuthToken(token);
       const me = await getProfile();
       login(token, me.data);
-      navigate('/dashboard');
+
+      const onboardingKey = `ft_onboard_${normalizedEmail}`;
+      const shouldOpenProfileFirst = localStorage.getItem(onboardingKey) === '1';
+      if (shouldOpenProfileFirst) {
+        localStorage.removeItem(onboardingKey);
+        navigate('/profile');
+      } else {
+        navigate('/dashboard');
+      }
     } catch (err) {
       notify(
         err.response?.data?.message || err.message || 'Login failed',
@@ -43,10 +51,10 @@ const LoginPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 px-4 py-8 md:py-12">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-emerald-50 via-teal-50 to-green-100 px-4 py-8 md:py-12">
       <div className="max-w-6xl mx-auto">
         <div className="grid lg:grid-cols-2 gap-6 items-stretch">
-          <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-8 md:p-10 text-white shadow-2xl">
+          <section className="relative reveal fx-card overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-600 via-emerald-700 to-teal-800 p-8 md:p-10 text-white shadow-2xl" style={{ '--d': '40ms' }}>
             <div className="absolute -top-24 -right-24 h-56 w-56 rounded-full bg-white/10" />
             <div className="absolute -bottom-20 -left-20 h-52 w-52 rounded-full bg-white/10" />
 
@@ -86,7 +94,7 @@ const LoginPage = () => {
             </div>
           </section>
 
-          <section className="rounded-3xl bg-white/90 backdrop-blur p-8 md:p-10 shadow-xl border border-emerald-100">
+          <section className="rounded-3xl reveal fx-card bg-white/90 backdrop-blur p-8 md:p-10 shadow-xl border border-emerald-100" style={{ '--d': '90ms' }}>
             <div className="flex items-center justify-between">
               <h2 className="text-3xl font-bold text-emerald-900">Welcome Back</h2>
               <span className="text-xs px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">

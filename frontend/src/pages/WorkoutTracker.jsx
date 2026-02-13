@@ -6,6 +6,7 @@ import {
   deleteWorkout,
 } from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
+import ThemedSelect from '../components/ThemedSelect';
 
 const workoutTypes = [
   'Walking',
@@ -139,7 +140,7 @@ export default function Workout() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
+    <div className="min-h-screen page-enter bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-4 sm:p-6">
       <div className="max-w-4xl mx-auto space-y-6">
         <h2 className="text-2xl sm:text-3xl font-bold text-emerald-800">
           Workout Tracker
@@ -147,21 +148,18 @@ export default function Workout() {
 
         <form
           onSubmit={submit}
-          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-6"
+          className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-6 fx-card reveal"
+          style={{ '--d': '40ms' }}
         >
-          <select
+          <ThemedSelect
             value={type}
             onChange={(e) => {
               setType(e.target.value);
               setDistance('');
               setMinutes('');
             }}
-            className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
-          >
-            {workoutTypes.map((w) => (
-              <option key={w}>{w}</option>
-            ))}
-          </select>
+            options={workoutTypes}
+          />
 
           {(type === 'Walking' || type === 'Running') && (
             <input
@@ -191,7 +189,7 @@ export default function Workout() {
           </button>
         </form>
 
-        <div className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-4">
+        <div className="bg-white rounded-3xl shadow-lg p-5 sm:p-8 space-y-4 fx-card reveal" style={{ '--d': '90ms' }}>
           <h3 className="text-lg font-semibold text-emerald-800">
             Today's Workouts
           </h3>
@@ -206,7 +204,7 @@ export default function Workout() {
               >
                 {editingId === item._id ? (
                   <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
-                    <select
+                    <ThemedSelect
                       value={editForm.type}
                       onChange={(e) => {
                         const nextType = e.target.value;
@@ -217,12 +215,9 @@ export default function Workout() {
                           minutes: '',
                         });
                       }}
-                      className="p-2 border rounded-lg"
-                    >
-                      {workoutTypes.map((w) => (
-                        <option key={w}>{w}</option>
-                      ))}
-                    </select>
+                      options={workoutTypes}
+                      className="p-2"
+                    />
 
                     {(editForm.type === 'Walking' || editForm.type === 'Running') ? (
                       <input
