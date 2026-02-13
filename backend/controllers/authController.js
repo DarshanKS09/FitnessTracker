@@ -11,6 +11,16 @@ function normalizeEmail(email) {
   return typeof email === 'string' ? email.trim().toLowerCase() : '';
 }
 
+function getRefreshCookieOptions() {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+  };
+}
+
 /* ======================
    SEND OTP
 ====================== */
@@ -110,11 +120,7 @@ async function register(req, res) {
   user.refreshTokens.push({ token: refresh, createdAt: new Date() });
   await user.save();
 
-  res.cookie('refreshToken', refresh, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie('refreshToken', refresh, getRefreshCookieOptions());
 
   res.status(201).json({ accessToken: access, refreshToken: refresh });
 }
@@ -142,11 +148,7 @@ async function login(req, res) {
   user.refreshTokens.push({ token: refresh, createdAt: new Date() });
   await user.save();
 
-  res.cookie('refreshToken', refresh, {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === 'production',
-    maxAge: 7 * 24 * 60 * 60 * 1000,
-  });
+  res.cookie('refreshToken', refresh, getRefreshCookieOptions());
 
   res.json({ accessToken: access, refreshToken: refresh });
 }
@@ -192,7 +194,12 @@ async function logout(req, res) {
     }
   } catch {}
 
-  res.clearCookie('refreshToken');
+  const opts = getRefreshCookieOptions();
+  res.clearCookie('refreshToken', {
+    httpOnly: opts.httpOnly,
+    secure: opts.secure,
+    sameSite: opts.sameSite,
+  });
   return res.json({ message: 'Logged out' });
 }
 
@@ -227,8 +234,10 @@ async function forgotPassword(req, res) {
 
   await user.save();
 
-  const frontendURL =
-    process.env.FRONTEND_URL || 'http://localhost:5173';
+  const frontendURL = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:5173')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean)[0];
 
   const resetURL = `${frontendURL}/reset-password/${resetToken}`;
 
