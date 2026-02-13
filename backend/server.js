@@ -17,10 +17,32 @@ const cookieParser = require('cookie-parser');
 const connectDB = require('./config/db');
 const cronJobs = require('./jobs/reminders');
 
+const normalizeOrigin = (origin) =>
+  String(origin || '')
+    .trim()
+    .replace(/\/+$/, '');
+
 const allowedOrigins = (process.env.FRONTEND_URLS || process.env.FRONTEND_URL || 'http://localhost:5173')
   .split(',')
-  .map((o) => o.trim())
+  .map((o) => normalizeOrigin(o))
   .filter(Boolean);
+
+const allowVercelPreviews =
+  String(process.env.ALLOW_VERCEL_PREVIEWS || 'true').toLowerCase() !== 'false';
+
+function isAllowedOrigin(origin) {
+  const normalized = normalizeOrigin(origin);
+  if (allowedOrigins.includes(normalized)) return true;
+
+  if (!allowVercelPreviews) return false;
+
+  try {
+    const host = new URL(normalized).hostname.toLowerCase();
+    return host.endsWith('.vercel.app');
+  } catch {
+    return false;
+  }
+}
 
 // Routers
 const authRoutes = require('./routes/auth');
@@ -50,8 +72,8 @@ app.use(
   cors({
     origin(origin, callback) {
       if (!origin) return callback(null, true);
-      if (allowedOrigins.includes(origin)) return callback(null, true);
-      return callback(new Error('Not allowed by CORS'));
+      if (isAllowedOrigin(origin)) return callback(null, true);
+      return callback(null, false);
     },
     credentials: true,
   })
