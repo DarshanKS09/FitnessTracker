@@ -4,8 +4,16 @@ import axios from 'axios';
    BASE CONFIG
 ====================== */
 
+function normalizeApiBaseUrl(raw) {
+  const trimmed = String(raw || '').trim().replace(/\/+$/, '');
+  if (!trimmed) return '';
+  if (trimmed.endsWith('/api/v1')) return trimmed;
+  return `${trimmed}/api/v1`;
+}
+
+const envBase = normalizeApiBaseUrl(import.meta.env.VITE_API_URL);
 const API_URL =
-  import.meta.env.VITE_API_URL ||
+  envBase ||
   (import.meta.env.PROD
     ? 'https://fitnesstracker-4x6i.onrender.com/api/v1'
     : 'http://localhost:5000/api/v1');

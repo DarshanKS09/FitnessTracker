@@ -1,9 +1,7 @@
-import React, { useState, useContext } from "react";
-import axios from "axios";
-import { AuthContext } from "../context/AuthContext";
+import React, { useState } from "react";
+import { generateDiet } from "../utils/api";
 
-const DietPlanForm = ({ userId }) => {
-  const { token } = useContext(AuthContext); // 🔴 Get token from context
+const DietPlanForm = () => {
   const [preferences, setPreferences] = useState([]);
   const [dietPlan, setDietPlan] = useState([]);
 
@@ -15,17 +13,13 @@ const DietPlanForm = ({ userId }) => {
   };
 
   const handleSubmit = async () => {
-  try {
-    const res = await axios.post('http://localhost:5000/api/diet/generate', {
-      preferences,
-    });
-
-    setDietPlan(res.data.dietPlan);
-  } catch (err) {
-    console.error('Error generating plan:', err);
-  }
-};
-
+    try {
+      const res = await generateDiet({ preferences });
+      setDietPlan(res.data?.dietPlan || []);
+    } catch (err) {
+      console.error("Error generating plan:", err);
+    }
+  };
 
   return (
     <div className="bg-white rounded p-6 shadow mt-8">
@@ -53,7 +47,7 @@ const DietPlanForm = ({ userId }) => {
           <h3 className="text-lg font-bold mb-2">Your Diet Plan</h3>
           <ul className="list-disc pl-5 space-y-1">
             {dietPlan.map((item, i) => (
-              <li key={i}>{item.strMeal}</li> // assumes TheMealDB format
+              <li key={i}>{item.strMeal || item.name || "Meal item"}</li>
             ))}
           </ul>
         </div>
