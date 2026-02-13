@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { updateProfile, setAuthToken } from '../utils/api';
+import { getProfile, updateProfile } from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
-import axios from 'axios';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 export default function Profile() {
   const { notify } = useNotification();
 
   const [form, setForm] = useState({
     name: '',
+    age: '',
+    gender: 'Other',
     height: '',
     weight: '',
     goal: 'Maintenance',
@@ -24,14 +23,13 @@ export default function Profile() {
 
   async function fetchProfile() {
     try {
-      const token = localStorage.getItem('accessToken');
-      if (token) setAuthToken(token);
-
-      const res = await axios.get(`${API_URL}/users/me`);
+      const res = await getProfile();
       const user = res.data;
 
       setForm({
         name: user.name || '',
+        age: user.age || '',
+        gender: user.gender || 'Other',
         height: user.height || '',
         weight: user.weight || '',
         goal: user.goal || 'Maintenance',
@@ -44,9 +42,11 @@ export default function Profile() {
 
   useEffect(() => {
     if (form.height && form.weight) {
-      const h = form.height / 100;
-      const bmiValue = (form.weight / (h * h)).toFixed(1);
+      const h = Number(form.height) / 100;
+      const bmiValue = (Number(form.weight) / (h * h)).toFixed(1);
       setBmi(bmiValue);
+    } else {
+      setBmi(null);
     }
   }, [form.height, form.weight]);
 
@@ -54,7 +54,12 @@ export default function Profile() {
     e.preventDefault();
 
     try {
-      await updateProfile(form);
+      await updateProfile({
+        ...form,
+        age: form.age ? Number(form.age) : undefined,
+        height: form.height ? Number(form.height) : undefined,
+        weight: form.weight ? Number(form.weight) : undefined,
+      });
       notify('Profile updated', 'success');
     } catch {
       notify('Failed to update profile', 'error');
@@ -64,7 +69,6 @@ export default function Profile() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
       <div className="max-w-4xl mx-auto space-y-8">
-
         <h2 className="text-3xl font-bold text-emerald-800">
           Fitness Profile
         </h2>
@@ -73,7 +77,6 @@ export default function Profile() {
           onSubmit={submit}
           className="bg-white rounded-3xl shadow-lg p-8 space-y-6"
         >
-
           <input
             type="text"
             value={form.name}
@@ -81,6 +84,26 @@ export default function Profile() {
             onChange={(e) => setForm({ ...form, name: e.target.value })}
             className="p-3 border rounded-lg w-full focus:ring-2 focus:ring-emerald-400"
           />
+
+          <div className="grid md:grid-cols-2 gap-6">
+            <input
+              type="number"
+              placeholder="Age"
+              value={form.age}
+              onChange={(e) => setForm({ ...form, age: e.target.value })}
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
+            />
+
+            <select
+              value={form.gender}
+              onChange={(e) => setForm({ ...form, gender: e.target.value })}
+              className="p-3 border rounded-lg focus:ring-2 focus:ring-emerald-400"
+            >
+              <option>Male</option>
+              <option>Female</option>
+              <option>Other</option>
+            </select>
+          </div>
 
           <div className="grid md:grid-cols-2 gap-6">
             <input
@@ -132,10 +155,10 @@ export default function Profile() {
                 {bmi < 18.5
                   ? 'Underweight'
                   : bmi < 25
-                  ? 'Normal'
-                  : bmi < 30
-                  ? 'Overweight'
-                  : 'Obese'}
+                    ? 'Normal'
+                    : bmi < 30
+                      ? 'Overweight'
+                      : 'Obese'}
               </p>
             </div>
           )}
@@ -146,7 +169,6 @@ export default function Profile() {
           >
             Save Profile
           </button>
-
         </form>
       </div>
     </div>

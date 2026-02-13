@@ -1,4 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
+import { useContext } from 'react';
+
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import Dashboard from './pages/Dashboard';
@@ -8,36 +10,76 @@ import DietPlan from './pages/DietPlan';
 import WorkoutTracker from './pages/WorkoutTracker';
 import Profile from './pages/Profile';
 import NotFound from './pages/NotFound';
-import { useContext } from 'react';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
+
+import ProtectedRoute from './components/ProtectedRoute';
 import { AuthContext } from './context/AuthContext';
-import  ProtectedRoute from './components/ProtectedRoute'
-function Protected({ children }) {
-  const { user } = useContext(AuthContext);
-  if (!user) return <Navigate to="/" replace />;
-  return children;
-}
 
 function App() {
+  const { user } = useContext(AuthContext);
+
   return (
     <Routes>
-      <Route path="/" element={<LoginPage />} />
+      {/* Public Routes */}
+      <Route
+        path="/"
+        element={user ? <Navigate to="/dashboard" replace /> : <LoginPage />}
+      />
+
       <Route path="/register" element={<RegisterPage />} />
       <Route path="/verify" element={<OTPVerification />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
 
-     <Route
-  path="/dashboard"
-  element={
-    <ProtectedRoute>
-      <Dashboard />
-    </ProtectedRoute>
-  }
-/>
+      {/* Protected Routes */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
 
-      <Route path="/food" element={<Protected><FoodTracker /></Protected>} />
-      <Route path="/diet" element={<Protected><DietPlan /></Protected>} />
-      <Route path="/workout" element={<Protected><WorkoutTracker /></Protected>} />
-      <Route path="/profile" element={<Protected><Profile /></Protected>} />
+      <Route
+        path="/food"
+        element={
+          <ProtectedRoute>
+            <FoodTracker />
+          </ProtectedRoute>
+        }
+      />
 
+      <Route
+        path="/diet"
+        element={
+          <ProtectedRoute>
+            <DietPlan />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/workout"
+        element={
+          <ProtectedRoute>
+            <WorkoutTracker />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/profile"
+        element={
+          <ProtectedRoute>
+            <Profile />
+          </ProtectedRoute>
+        }
+      />
+      <Route path="/reset-password/:token" element={<ResetPassword />} />
+
+
+      {/* Fallback */}
       <Route path="*" element={<NotFound />} />
     </Routes>
   );

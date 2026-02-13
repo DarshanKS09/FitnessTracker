@@ -1,48 +1,121 @@
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+/* ======================
+   BASE CONFIG
+====================== */
+
+const API_URL =
+  import.meta.env.VITE_API_URL ||
+  'http://localhost:5000/api/v1';
+
+const api = axios.create({
+  baseURL: API_URL,
+  withCredentials: true,
+});
+
+/* ======================
+   TOKEN HANDLING
+====================== */
 
 export function setAuthToken(token) {
-  if (token) axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-  else delete axios.defaults.headers.common['Authorization'];
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+  } else {
+    delete api.defaults.headers.common['Authorization'];
+  }
 }
 
+/* ======================
+   AUTH
+====================== */
 
-// Auth
-export const sendOtp = (email) => axios.post(`${API_URL}/auth/send-otp`, { email });
-export const verifyOtp = (data) => axios.post(`${API_URL}/auth/verify-otp`, data);
-export const register = (data) => axios.post(`${API_URL}/auth/register`, data);
-export const login = (data) => axios.post(`${API_URL}/auth/login`, data);
-export const refresh = () => axios.post(`${API_URL}/auth/refresh`);
-export const logout = () => axios.post(`${API_URL}/auth/logout`);
+export const sendOtp = (email) =>
+  api.post('/auth/send-otp', { email });
 
-// Food
-export const addFood = (data) => axios.post(`${API_URL}/food/add`, data);
-export const getMyFood = (params) => axios.get(`${API_URL}/food/my`, { params });
-export const updateFood = (id, data) => axios.put(`${API_URL}/food/update/${id}`, data);
-export const deleteFood = (id) => axios.delete(`${API_URL}/food/delete/${id}`);
-export const dailyTotals = (params) => axios.get(`${API_URL}/food/daily-totals`, { params });
-export const weeklyFood = () => axios.get(`${API_URL}/food/weekly`);
+export const verifyOtp = (data) =>
+  api.post('/auth/verify-otp', data);
 
-// Diet
-export const generateDiet = (data) => axios.post(`${API_URL}/diet/generate`, data);
-export const getDiet = () => axios.get(`${API_URL}/diet/my`);
+export const register = (data) =>
+  api.post('/auth/register', data);
 
-// Workout
-// Workout
+export const login = (data) =>
+  api.post('/auth/login', data);
+
+export const refresh = () =>
+  api.post('/auth/refresh');
+
+export const logout = () =>
+  api.post('/auth/logout');
+
+export const forgotPassword = (email) =>
+  api.post('/auth/forgot-password', { email });
+
+export const resetPassword = (token, password) =>
+  api.post(`/auth/reset-password/${token}`, { password });
+
+/* ======================
+   FOOD
+====================== */
+
+export const addFood = (data) =>
+  api.post('/food/add', data);
+
+export const getMyFood = () =>
+  api.get('/food/my');
+
+export const dailyTotals = () =>
+  api.get('/food/daily');
+
+export const weeklyFood = () =>
+  api.get('/food/weekly');
+
+export const updateFood = (id, data) =>
+  api.put(`/food/update/${id}`, data);
+
+export const deleteFood = (id) =>
+  api.delete(`/food/delete/${id}`);
+
+/* ======================
+   DIET
+====================== */
+
+export const generateDiet = (data) =>
+  api.post('/diet/generate', data);
+
+export const getDiet = () =>
+  api.get('/diet/my');
+
+/* ======================
+   WORKOUT
+====================== */
+
 export const addWorkout = (data) =>
-  axios.post(`${API_URL}/workout`, data);
+  api.post('/workout', data);
 
 export const getMyWorkouts = () =>
-  axios.get(`${API_URL}/workout`);
+  api.get('/workout');
 
+export const updateWorkout = (id, data) =>
+  api.put(`/workout/${id}`, data);
 
-// Dashboard
-export const getDashboard = () => axios.get(`${API_URL}/dashboard`);
+export const deleteWorkout = (id) =>
+  api.delete(`/workout/${id}`);
 
-// User
+/* ======================
+   DASHBOARD
+====================== */
+
+export const getDashboard = () =>
+  api.get('/dashboard');
+
+/* ======================
+   USER
+====================== */
+
 export const updateProfile = (data) =>
-  axios.put(`${API_URL}/users/me`, data);
+  api.put('/users/me', data);
 
 export const getProfile = () =>
-  axios.get(`${API_URL}/users/me`);
+  api.get('/users/me');
+
+export default api;

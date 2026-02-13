@@ -1,5 +1,5 @@
 const cron = require('node-cron');
-const User = require('../models/User').default;
+const User = require('../models/User');
 const FoodLog = require('../models/FoodLog');
 const mailer = require('../services/mailer');
 

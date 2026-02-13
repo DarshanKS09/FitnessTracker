@@ -1,6 +1,10 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import {
+  sendOtp as sendOtpApi,
+  verifyOtp as verifyOtpApi,
+  register as registerApi,
+} from '../utils/api';
 
 const RegisterPage = () => {
   const [step, setStep] = useState('email'); // 'email' | 'verify' | 'password' | 'done'
@@ -15,13 +19,13 @@ const RegisterPage = () => {
 
   const navigate = useNavigate();
 
-  const sendOtp = async (e) => {
+  const handleSendOtp = async (e) => {
     e && e.preventDefault();
     setError('');
     setMessage('');
     setPreviewUrl(null);
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/send-otp', { email });
+      const res = await sendOtpApi(email);
       setMessage(res.data.message || 'OTP sent');
       // If the backend returned a previewUrl (dev Ethereal), store it so user can open email in browser
       if (res.data.previewUrl) setPreviewUrl(res.data.previewUrl);
@@ -31,12 +35,12 @@ const RegisterPage = () => {
     }
   };
 
-  const verifyOtp = async (e) => {
+  const handleVerifyOtp = async (e) => {
     e && e.preventDefault();
     setError('');
     setMessage('');
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/verify-otp', { email, code });
+      const res = await verifyOtpApi({ email, code });
       setMessage(res.data.message || 'OTP verified');
       setStep('password');
     } catch (err) {
@@ -64,7 +68,7 @@ const RegisterPage = () => {
     }
 
     try {
-      const res = await axios.post('http://localhost:5000/api/auth/register', { email, password, name });
+      const res = await registerApi({ email, password, name });
       setMessage(res.data.message || 'Registered successfully');
       setStep('done');
       setTimeout(() => navigate('/'), 1400);
@@ -79,7 +83,7 @@ const RegisterPage = () => {
         <h2 className="text-2xl font-bold mb-4">Register</h2>
 
         {step === 'email' && (
-          <form onSubmit={sendOtp} className="space-y-4">
+          <form onSubmit={handleSendOtp} className="space-y-4">
             <input
               type="email"
               placeholder="Email"
@@ -93,7 +97,7 @@ const RegisterPage = () => {
         )}
 
         {step === 'verify' && (
-          <form onSubmit={verifyOtp} className="space-y-4">
+          <form onSubmit={handleVerifyOtp} className="space-y-4">
             <div className="text-sm mb-2 text-gray-600">OTP sent to <strong>{email}</strong></div>
             <input
               type="text"
@@ -104,7 +108,7 @@ const RegisterPage = () => {
               className="w-full mb-2 p-2 border border-gray-300 rounded"
             />
             <button className="w-full bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Verify OTP</button>
-            <button type="button" onClick={sendOtp} className="mt-2 w-full bg-gray-200 text-black px-4 py-2 rounded">Resend OTP</button>
+            <button type="button" onClick={handleSendOtp} className="mt-2 w-full bg-gray-200 text-black px-4 py-2 rounded">Resend OTP</button>
             {previewUrl && (
               <div className="mt-2 text-center">
                 <a href={previewUrl} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 underline">Open email (dev preview)</a>

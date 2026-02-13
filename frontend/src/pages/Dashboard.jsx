@@ -12,20 +12,40 @@ const Dashboard = () => {
     diet: null
   });
 
+  const loadDashboard = async () => {
+    try {
+      const res = await getDashboard();
+      setData(res.data || res);
+    } catch {}
+  };
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getDashboard();
-        setData(res.data || res);
-      } catch {}
-    })();
+    loadDashboard();
+
+    const onDataUpdated = () => loadDashboard();
+    const onFocus = () => loadDashboard();
+
+    window.addEventListener('fitness-data-updated', onDataUpdated);
+    window.addEventListener('focus', onFocus);
+
+    const interval = setInterval(loadDashboard, 15000);
+
+    return () => {
+      window.removeEventListener('fitness-data-updated', onDataUpdated);
+      window.removeEventListener('focus', onFocus);
+      clearInterval(interval);
+    };
   }, []);
 
-  const calorieTarget = data.diet?.calorieTarget || 2000;
-  const proteinTarget = data.diet?.proteinTarget || 150;
+  const calorieTarget = data.diet?.calorieTarget ?? 0;
+  const proteinTarget = data.diet?.proteinTarget ?? 0;
 
-  const caloriePercent = Math.min((data.daily.calories / calorieTarget) * 100, 100);
-  const proteinPercent = Math.min((data.daily.protein / proteinTarget) * 100, 100);
+  const caloriePercent = calorieTarget > 0
+    ? Math.min((data.daily.calories / calorieTarget) * 100, 100)
+    : 0;
+  const proteinPercent = proteinTarget > 0
+    ? Math.min((data.daily.protein / proteinTarget) * 100, 100)
+    : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
@@ -44,7 +64,7 @@ const Dashboard = () => {
           <div className="bg-white/60 backdrop-blur rounded-xl px-4 py-2 shadow">
             <p className="text-sm text-gray-500">Daily Target</p>
             <p className="text-lg font-semibold text-emerald-700">
-              {calorieTarget} kcal
+              {calorieTarget > 0 ? `${calorieTarget} kcal` : 'Set in Profile'}
             </p>
           </div>
         </div>

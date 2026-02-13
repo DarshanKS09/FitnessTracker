@@ -9,10 +9,27 @@ const foodLogSchema = new mongoose.Schema(
       index: true,
     },
 
+    foodId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'FoodMaster',
+      index: true,
+    },
+
     foodName: {
       type: String,
       required: true,
       trim: true,
+    },
+
+    quantity: {
+      type: Number,
+      required: true,
+    },
+
+    unit: {
+      type: String,
+      enum: ['g', 'grams', 'cup', 'bowl'],
+      required: true,
     },
 
     grams: {
@@ -55,4 +72,9 @@ const foodLogSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model('FoodLog', foodLogSchema);
+foodLogSchema.index({ userId: 1, date: 1 });
+
+module.exports =
+  mongoose.models.FoodLog ||
+  mongoose.model('FoodLog', foodLogSchema);
+

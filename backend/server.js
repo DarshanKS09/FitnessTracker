@@ -1,8 +1,9 @@
 require('dotenv').config();
 
-// Warn if critical env vars are missing
 if (!process.env.JWT_SECRET || !process.env.REFRESH_SECRET) {
-  console.warn('Warning: JWT_SECRET and/or REFRESH_SECRET not set. Development fallback secrets will be used. Add them to .env for production.');
+  console.warn(
+    'Warning: JWT_SECRET and/or REFRESH_SECRET not set. Add them to .env for production.'
+  );
 }
 
 const express = require('express');
@@ -15,6 +16,7 @@ const cookieParser = require('cookie-parser');
 
 const connectDB = require('./config/db');
 const cronJobs = require('./jobs/reminders');
+
 // Routers
 const authRoutes = require('./routes/auth');
 const userRoutes = require('./routes/user');
@@ -26,54 +28,65 @@ const dashboardRoutes = require('./routes/dashboard');
 // Connect DB
 connectDB();
 
-// Initialize mailer (SMTP or Ethereal) so the first OTP call isn't slowed by transporter creation
-const mailer = require('./services/mailer');
+// Initialize mailer
+require('./services/mailer');
 
+// ==================
 // Middleware
+// ==================
 app.use(helmet());
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(cookieParser());
 
-app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+    credentials: true,
+  })
+);
 
-// Rate limiter
+// Rate Limiter
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 200,
 });
+
 app.use('/api/', apiLimiter);
 
-// Routes
-app.use('/api/auth', authRoutes);
-app.use('/api/users', userRoutes);
-app.use('/api/food', foodRoutes);
-app.use('/api/diet', dietRoutes);
-app.use('/api/workout', workoutRoutes);
-app.use('/api/dashboard', dashboardRoutes);
+// ==================
+// Versioned API Routes
+// ==================
 
-// Health
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/users', userRoutes);
+app.use('/api/v1/food', foodRoutes);
+app.use('/api/v1/diet', dietRoutes);
+app.use('/api/v1/workout', workoutRoutes);
+app.use('/api/v1/dashboard', dashboardRoutes);
+
+// ==================
+// Health Check
+// ==================
 const dbStatus = require('./config/db').getDbStatus;
+
 app.get('/health', (req, res) => {
-  const mailInfo = (() => {
-    try { return require('./services/mailer').getTransportInfo(); } catch (e) { return { initialized: false }; }
-  })();
   const dbInfo = dbStatus ? dbStatus() : { connected: false };
-  return res.json({ status: 'ok', db: dbInfo, mail: mailInfo });
+  return res.json({ status: 'ok', db: dbInfo });
 });
 
-// Improve crash logging for dev
+// ==================
+// Error Logging
+// ==================
 process.on('unhandledRejection', (reason, p) => {
   console.error('Unhandled Rejection at:', p, 'reason:', reason);
 });
+
 process.on('uncaughtException', (err) => {
-  console.error('Uncaught Exception thrown:', err);
+  console.error('Uncaught Exception:', err);
 });
 
-// Start cron jobs (reminders & weekly summary)
+// Start cron jobs
 cronJobs.start();
 
 const PORT = process.env.PORT || 5000;

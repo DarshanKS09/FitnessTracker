@@ -1,5 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { addWorkout, getMyWorkouts } from '../utils/api';
+import {
+  addWorkout,
+  getMyWorkouts,
+  updateWorkout,
+  deleteWorkout,
+} from '../utils/api';
 import { useNotification } from '../context/NotificationContext';
 
 const workoutTypes = [
@@ -12,11 +17,20 @@ const workoutTypes = [
 
 export default function Workout() {
   const { notify } = useNotification();
+  const emitDashboardRefresh = () => {
+    window.dispatchEvent(new Event('fitness-data-updated'));
+  };
 
   const [type, setType] = useState('Walking');
   const [distance, setDistance] = useState('');
   const [minutes, setMinutes] = useState('');
-  const [logs, setLogs] = useState([]); // ALWAYS array
+  const [logs, setLogs] = useState([]);
+  const [editingId, setEditingId] = useState(null);
+  const [editForm, setEditForm] = useState({
+    type: 'Walking',
+    distance: '',
+    minutes: '',
+  });
 
   useEffect(() => {
     fetchLogs();
@@ -27,7 +41,6 @@ export default function Workout() {
       const res = await getMyWorkouts();
       const data = res?.data ?? res;
 
-      // Defensive protection
       if (Array.isArray(data)) {
         setLogs(data);
       } else if (Array.isArray(data?.workouts)) {
@@ -43,7 +56,7 @@ export default function Workout() {
   const submit = async (e) => {
     e.preventDefault();
 
-    let payload = {
+    const payload = {
       type,
       distance: null,
       minutes: null,
@@ -60,23 +73,78 @@ export default function Workout() {
     try {
       await addWorkout(payload);
       notify('Workout logged', 'success');
+      emitDashboardRefresh();
       setDistance('');
       setMinutes('');
       fetchLogs();
-    } catch {
-      notify('Failed to log workout', 'error');
+    } catch (err) {
+      notify(err.response?.data?.message || 'Failed to log workout', 'error');
+    }
+  };
+
+  const startEdit = (item) => {
+    setEditingId(item._id);
+    setEditForm({
+      type: item.type || 'Walking',
+      distance: item.distance ?? '',
+      minutes: item.minutes ?? '',
+    });
+  };
+
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditForm({
+      type: 'Walking',
+      distance: '',
+      minutes: '',
+    });
+  };
+
+  const saveEdit = async (id) => {
+    const payload = {
+      type: editForm.type,
+      distance: null,
+      minutes: null,
+    };
+
+    if (editForm.type === 'Walking' || editForm.type === 'Running') {
+      if (!editForm.distance) return notify('Enter distance (km)', 'error');
+      payload.distance = Number(editForm.distance);
+    } else {
+      if (!editForm.minutes) return notify('Enter duration (minutes)', 'error');
+      payload.minutes = Number(editForm.minutes);
+    }
+
+    try {
+      await updateWorkout(id, payload);
+      notify('Workout updated', 'success');
+      emitDashboardRefresh();
+      cancelEdit();
+      fetchLogs();
+    } catch (err) {
+      notify(err.response?.data?.message || 'Failed to update workout', 'error');
+    }
+  };
+
+  const removeWorkout = async (id) => {
+    try {
+      await deleteWorkout(id);
+      notify('Workout deleted', 'success');
+      emitDashboardRefresh();
+      if (editingId === id) cancelEdit();
+      fetchLogs();
+    } catch (err) {
+      notify(err.response?.data?.message || 'Failed to delete workout', 'error');
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 p-6">
       <div className="max-w-4xl mx-auto space-y-6">
-
         <h2 className="text-3xl font-bold text-emerald-800">
           Workout Tracker
         </h2>
 
-        {/* Form */}
         <form
           onSubmit={submit}
           className="bg-white rounded-3xl shadow-lg p-8 space-y-6"
@@ -105,7 +173,7 @@ export default function Workout() {
             />
           )}
 
-          {(type !== 'Walking' && type !== 'Running') && (
+          {type !== 'Walking' && type !== 'Running' && (
             <input
               type="number"
               placeholder="Duration (minutes)"
@@ -123,7 +191,6 @@ export default function Workout() {
           </button>
         </form>
 
-        {/* Logged Workouts */}
         <div className="bg-white rounded-3xl shadow-lg p-8 space-y-4">
           <h3 className="text-lg font-semibold text-emerald-800">
             Today's Workouts
@@ -135,26 +202,101 @@ export default function Workout() {
             logs.map((item) => (
               <div
                 key={item._id}
-                className="border border-emerald-100 rounded-xl p-4 bg-emerald-50 flex justify-between"
+                className="border border-emerald-100 rounded-xl p-4 bg-emerald-50"
               >
-                <div>
-                  <p className="font-semibold text-emerald-800">
-                    {item.type}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    {item.distance
-                      ? `${item.distance} km`
-                      : `${item.minutes} minutes`}
-                  </p>
-                </div>
-                <p className="text-emerald-700 font-medium">
-                  {item.caloriesBurned || 0} kcal
-                </p>
+                {editingId === item._id ? (
+                  <div className="grid md:grid-cols-5 gap-3 items-center">
+                    <select
+                      value={editForm.type}
+                      onChange={(e) => {
+                        const nextType = e.target.value;
+                        setEditForm({
+                          ...editForm,
+                          type: nextType,
+                          distance: '',
+                          minutes: '',
+                        });
+                      }}
+                      className="p-2 border rounded-lg"
+                    >
+                      {workoutTypes.map((w) => (
+                        <option key={w}>{w}</option>
+                      ))}
+                    </select>
+
+                    {(editForm.type === 'Walking' || editForm.type === 'Running') ? (
+                      <input
+                        type="number"
+                        value={editForm.distance}
+                        onChange={(e) => setEditForm({ ...editForm, distance: e.target.value })}
+                        placeholder="Distance (km)"
+                        className="p-2 border rounded-lg"
+                      />
+                    ) : (
+                      <input
+                        type="number"
+                        value={editForm.minutes}
+                        onChange={(e) => setEditForm({ ...editForm, minutes: e.target.value })}
+                        placeholder="Duration (minutes)"
+                        className="p-2 border rounded-lg"
+                      />
+                    )}
+
+                    <button
+                      type="button"
+                      onClick={() => saveEdit(item._id)}
+                      className="px-3 py-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
+                    >
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300"
+                    >
+                      Cancel
+                    </button>
+                    <div className="text-sm text-gray-600">
+                      {item.caloriesBurned || 0} kcal
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex justify-between items-center">
+                    <div>
+                      <p className="font-semibold text-emerald-800">
+                        {item.type}
+                      </p>
+                      <p className="text-sm text-gray-600">
+                        {item.distance
+                          ? `${item.distance} km`
+                          : `${item.minutes} minutes`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="text-emerald-700 font-medium">
+                        {item.caloriesBurned || 0} kcal
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => startEdit(item)}
+                        className="px-3 py-1.5 rounded-lg bg-white border border-emerald-300 text-emerald-700 hover:bg-emerald-100"
+                      >
+                        Edit Workout
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => removeWorkout(item._id)}
+                        className="px-3 py-1.5 rounded-lg bg-red-50 border border-red-200 text-red-600 hover:bg-red-100"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             ))
           )}
         </div>
-
       </div>
     </div>
   );

@@ -1,63 +1,23 @@
 const FoodLog = require('../models/FoodLog');
 const WorkoutLog = require('../models/WorkoutLog');
 const User = require('../models/User');
-
-function calculateTargets(user) {
-  if (!user.height || !user.weight || !user.age || !user.goal || !user.activityLevel) {
-    return null;
-  }
-
-  // BMR (Mifflin-St Jeor)
-  let bmr;
-
-  if (user.gender === 'Male') {
-    bmr =
-      10 * user.weight +
-      6.25 * user.height -
-      5 * user.age +
-      5;
-  } else {
-    bmr =
-      10 * user.weight +
-      6.25 * user.height -
-      5 * user.age -
-      161;
-  }
-
-  const activityMap = {
-    Sedentary: 1.2,
-    Light: 1.375,
-    Moderate: 1.55,
-    Active: 1.725,
-  };
-
-  const tdee = bmr * (activityMap[user.activityLevel] || 1.2);
-
-  let calorieTarget = tdee;
-
-  if (user.goal === 'Cutting') calorieTarget -= 500;
-  if (user.goal === 'Bulking') calorieTarget += 300;
-
-  const proteinTarget = user.weight * 1.8;
-
-  return {
-    calorieTarget: Math.round(calorieTarget),
-    proteinTarget: Math.round(proteinTarget),
-  };
-}
+const { calculateTargetsFromProfile } = require('../utils/fitnessTargets');
+const mongoose = require('mongoose');
 
 async function dashboard(req, res) {
   try {
-    const userId = req.user._id;
+    const userId = new mongoose.Types.ObjectId(req.user.id);
 
     const user = await User.findById(userId);
 
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
 
     // Daily totals
     const daily = await FoodLog.aggregate([
-      { $match: { userId, createdAt: { $gte: today } } },
+      { $match: { userId, createdAt: { $gte: today, $lt: tomorrow } } },
       {
         $group: {
           _id: null,
@@ -71,7 +31,7 @@ async function dashboard(req, res) {
 
     // Burned calories
     const workouts = await WorkoutLog.aggregate([
-      { $match: { userId, createdAt: { $gte: today } } },
+      { $match: { userId, createdAt: { $gte: today, $lt: tomorrow } } },
       {
         $group: {
           _id: null,
@@ -100,7 +60,7 @@ async function dashboard(req, res) {
       { $sort: { _id: 1 } },
     ]);
 
-    const targets = calculateTargets(user);
+    const targets = calculateTargetsFromProfile(user);
 
     res.json({
       daily: foodTotals,
