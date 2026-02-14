@@ -23,6 +23,12 @@ const api = axios.create({
   withCredentials: true,
 });
 
+const storedAccessToken =
+  typeof window !== 'undefined' ? sessionStorage.getItem('accessToken') : null;
+if (storedAccessToken) {
+  api.defaults.headers.common['Authorization'] = `Bearer ${storedAccessToken}`;
+}
+
 /* ======================
    TOKEN HANDLING
 ====================== */

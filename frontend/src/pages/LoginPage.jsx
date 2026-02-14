@@ -23,6 +23,7 @@ const LoginPage = () => {
       const normalizedEmail = email.trim().toLowerCase();
       const res = await loginApi({ email: normalizedEmail, password });
       const token = res.data?.accessToken;
+      const refreshToken = res.data?.refreshToken;
 
       if (!token) {
         throw new Error('No access token received');
@@ -30,7 +31,7 @@ const LoginPage = () => {
 
       setAuthToken(token);
       const me = await getProfile();
-      login(token, me.data);
+      login(token, me.data, refreshToken);
 
       const onboardingKey = `ft_onboard_${normalizedEmail}`;
       const shouldOpenProfileFirst = localStorage.getItem(onboardingKey) === '1';
