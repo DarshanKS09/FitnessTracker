@@ -166,12 +166,16 @@ const Dashboard = () => {
                 </div>
               </div>
               <p className="mt-3 text-sm font-medium text-emerald-700">Daily Calories</p>
-              <div className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 fx-card">
+              <button
+                type="button"
+                onClick={() => navigate('/food')}
+                className="mt-4 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 transition fx-card"
+              >
                 <svg viewBox="0 0 24 24" className="h-4 w-4 text-emerald-700" fill="currentColor" aria-hidden="true">
-                  <path d="M2 9h2v6H2V9zm3-2h2v10H5V7zm3 4h8v2H8v-2zm9-4h2v10h-2V7zm3 2h2v6h-2V9z" />
+                  <path d="M3 3h2v18H3V3zm4 4h2v10H7V7zm4-2h2v14h-2V5zm4 3h2v8h-2V8zm4-5h2v18h-2V3z" />
                 </svg>
-                <span className="text-xs font-semibold text-emerald-800">Energy Mode</span>
-              </div>
+                <span>Add Food Log</span>
+              </button>
             </div>
           </div>
 
